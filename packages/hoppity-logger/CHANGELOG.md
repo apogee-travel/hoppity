@@ -1,5 +1,16 @@
 # @apogeelabs/hoppity-logger
 
+## 0.3.0
+
+### Minor Changes
+
+- Production readiness iteration
+
+### Patch Changes
+
+- Updated dependencies
+    - @apogeelabs/hoppity@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes
