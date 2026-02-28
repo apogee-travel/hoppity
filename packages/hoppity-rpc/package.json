@@ -70,7 +70,9 @@
         "typescript": "^5.2.2"
     },
     "dependencies": {
-        "@apogeelabs/hoppity": "workspace:*",
+        "@apogeelabs/hoppity": "workspace:*"
+    },
+    "peerDependencies": {
         "rascal": "^20.1.1"
     }
 }

@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@apogeelabs/the-agency':
-        specifier: 0.3.0
-        version: 0.3.0
+        specifier: 0.4.0
+        version: 0.4.0
       fast-deep-equal:
         specifier: ^3.1.3
         version: 3.1.3
@@ -457,8 +457,8 @@ packages:
     resolution: {directory: packages/hoppity-subscriptions, type: directory}
     engines: {node: '>=22'}
 
-  '@apogeelabs/the-agency@0.3.0':
-    resolution: {integrity: sha512-ueVK6dfeZ05g2hSH7xdsJSUlIGYudYlA9K+ie7jyFVV7WU4tLEgapJG8mYj/RCe/znJevFpFnikPnWtNZhMvXQ==}
+  '@apogeelabs/the-agency@0.4.0':
+    resolution: {integrity: sha512-CfzV2rsGNHNKGLB5rI0xN3sneZKQ8G/AWGznNQV+MuYYZ3nppHu5/qJylgM9iCgFrklHCwcJ2DLQbZ/c5wRNlQ==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -3938,7 +3938,7 @@ snapshots:
       - amqplib
       - supports-color
 
-  '@apogeelabs/the-agency@0.3.0':
+  '@apogeelabs/the-agency@0.4.0':
     dependencies:
       prompts: 2.4.2
 
