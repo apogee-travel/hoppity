@@ -1,0 +1,970 @@
+# Hoppity — LLM Code Generation Reference
+
+Pattern-driven RabbitMQ topology builder for Node.js microservices, built on Rascal.
+
+## Package Overview
+
+| Package | npm Name | Version | Status | Dependencies |
+|---------|----------|---------|--------|--------------|
+| hoppity | `@apogeelabs/hoppity` | 0.2.0 | Stable | `rascal@^20.1.1`, `fast-deep-equal@^3.1.3` |
+| hoppity-rpc | `@apogeelabs/hoppity-rpc` | 0.2.0 | Stable | `@apogeelabs/hoppity` (workspace), `rascal@^20.1.1` (peer) |
+| hoppity-delayed-publish | `@apogeelabs/hoppity-delayed-publish` | 0.2.0 | Stable | `@apogeelabs/hoppity` (workspace), `rascal@^20.1.1` (peer) |
+| hoppity-subscriptions | `@apogeelabs/hoppity-subscriptions` | 0.2.0 | Stable | `@apogeelabs/hoppity` (workspace), `rascal@^20.1.1` (peer) |
+| hoppity-logger | `@apogeelabs/hoppity-logger` | 0.2.0 | Stable | `@apogeelabs/hoppity` (workspace), `rascal@^20.1.1` (peer) |
+
+All packages require Node >= 22. All produce CJS, ESM, and type declarations.
+
+## Type Signatures
+
+### Core Types (`@apogeelabs/hoppity`)
+
+```typescript
+import { BrokerConfig, BrokerAsPromised, PublicationConfig } from "rascal";
+
+// Logger interface — all middleware and packages use this
+interface Logger {
+    silly(message: string, ...args: any[]): void;
+    debug(message: string, ...args: any[]): void;
+    info(message: string, ...args: any[]): void;
+    warn(message: string, ...args: any[]): void;
+    error(message: string, ...args: any[]): void;
+    critical(message: string, ...args: any[]): void;
+}
+
+// Shared state passed through the middleware pipeline
+interface MiddlewareContext {
+    data: Record<string, any>;      // Mutable shared state for inter-middleware communication
+    middlewareNames: string[];       // Names of all executed middleware (in order)
+    logger: Logger;                  // Logger instance (defaults to ConsoleLogger)
+}
+
+// What every middleware function must return
+interface MiddlewareResult {
+    topology: BrokerConfig;                                       // Modified topology (required)
+    onBrokerCreated?: (broker: BrokerAsPromised) => void | Promise<void>;  // Optional lifecycle hook
+}
+
+// The middleware function signature
+type MiddlewareFunction = (
+    topology: BrokerConfig,
+    context: MiddlewareContext
+) => MiddlewareResult;
+
+// Alias for the onBrokerCreated callback
+type BrokerCreatedCallback = (broker: BrokerAsPromised) => void | Promise<void>;
+
+// The fluent builder API returned by withTopology() and use()
+interface BuilderInterface {
+    use(middleware: MiddlewareFunction): BuilderInterface;
+    build(): Promise<BrokerAsPromised>;
+}
+
+// Utility type for extending broker with custom methods (used by RPC, delayed-publish)
+type BrokerWithExtensions<T extends Record<string, any>[]> =
+    BrokerAsPromised & UnionToIntersection<T[number]>;
+
+// (Internal utility — included for completeness)
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void
+    ? I
+    : never;
+```
+
+### RPC Types (`@apogeelabs/hoppity-rpc`)
+
+```typescript
+interface RpcMiddlewareOptions {
+    serviceName: string;          // Used for queue naming and routing
+    instanceId: string;           // Unique per service instance
+    rpcExchange?: string;         // Defaults to "rpc_requests"
+    defaultTimeout?: number;      // Defaults to 30_000 ms
+}
+
+interface RpcRequest {
+    correlationId: string;
+    rpcName: string;
+    payload: any;
+    replyTo: string;
+    headers?: Record<string, any>;
+}
+
+interface RpcResponse {
+    correlationId: string;
+    payload?: any;
+    error?: {
+        code: string;
+        message: string;
+        details?: any;
+    };
+    headers?: Record<string, any>;
+}
+
+// Extended broker interface after withRpcSupport middleware runs
+interface RpcBroker extends BrokerAsPromised {
+    request<TRequest = any, TResponse = any>(
+        rpcName: string,
+        message: TRequest,
+        overrides?: PublicationConfig
+    ): Promise<TResponse>;
+
+    addRpcListener<TRequest = any, TResponse = any>(
+        rpcName: string,
+        handler: (request: TRequest) => Promise<TResponse>
+    ): void;
+
+    cancelRequest(correlationId: string): boolean;
+}
+
+enum RpcErrorCode {
+    TIMEOUT = "RPC_TIMEOUT",
+    METHOD_NOT_FOUND = "RPC_METHOD_NOT_FOUND",
+    HANDLER_ERROR = "RPC_HANDLER_ERROR",
+    CANCELLED = "RPC_CANCELLED",
+    SERVICE_UNAVAILABLE = "RPC_SERVICE_UNAVAILABLE",
+}
+```
+
+### Delayed Publish Types (`@apogeelabs/hoppity-delayed-publish`)
+
+```typescript
+interface DelayedPublishOptions {
+    serviceName: string;          // Used for queue naming
+    instanceId: string;           // Unique per service instance
+    defaultDelay?: number;        // Defaults to 30_000 ms
+    maxRetries?: number;          // Defaults to 5
+    retryDelay?: number;          // Defaults to 1_000 ms
+    durable?: boolean;            // Defaults to true — controls queue durability and message persistence
+}
+
+interface DelayedMessage {
+    originalMessage: any;
+    originalPublication: string;
+    originalOverrides?: PublicationConfig;
+    targetDelay: number;
+    createdAt: number;
+    retryCount?: number;
+}
+
+// Extended broker interface after withDelayedPublish middleware runs
+interface DelayedPublishBroker extends BrokerAsPromised {
+    delayedPublish(
+        publication: string,
+        message: any,
+        overrides?: PublicationConfig,
+        delay?: number               // Uses defaultDelay if omitted
+    ): Promise<void>;
+}
+
+enum DelayedPublishErrorCode {
+    QUEUE_FULL = "DELAYED_PUBLISH_QUEUE_FULL",
+    REPUBLISH_FAILED = "DELAYED_PUBLISH_REPUBLISH_FAILED",
+    MAX_RETRIES_EXCEEDED = "DELAYED_PUBLISH_MAX_RETRIES_EXCEEDED",
+    INVALID_DELAY = "DELAYED_PUBLISH_INVALID_DELAY",
+}
+
+class DelayedPublishError extends Error {
+    public readonly code: DelayedPublishErrorCode;
+    public readonly details?: any;
+    constructor(code: DelayedPublishErrorCode, message: string, details?: any);
+}
+```
+
+### Subscriptions Types (`@apogeelabs/hoppity-subscriptions`)
+
+```typescript
+// Handler receives the raw Rascal message, parsed content, ack/nack function, and broker
+type SubscriptionHandler = (
+    message: any,                                        // Rascal message object
+    content: any,                                        // Parsed message content
+    ackOrNackFn: (err?: Error, recovery?: any) => void,  // Acknowledge or reject
+    broker: BrokerAsPromised                             // Broker instance
+) => Promise<void> | void;
+
+// Map of subscription names to handler functions
+type SubscriptionHandlers = Record<string, SubscriptionHandler>;
+
+interface ValidationResult {
+    isValid: boolean;
+    missingSubscriptions: string[];       // Handler keys with no matching subscription in topology
+    availableSubscriptions: string[];     // Subscription names found in topology
+    invalidHandlers: string[];            // Handler keys that are not functions
+    errorMessage?: string;
+}
+```
+
+### Logger Types (`@apogeelabs/hoppity-logger`)
+
+```typescript
+interface WithCustomLoggerOptions {
+    logger: Logger;   // Any object implementing the Logger interface
+}
+```
+
+## Function Signatures
+
+### `@apogeelabs/hoppity`
+
+```typescript
+// Default export — the entry point
+const hoppity: {
+    withTopology(topology: BrokerConfig): BuilderInterface;
+    use(middleware: MiddlewareFunction): BuilderInterface;
+};
+
+// Named exports
+class ConsoleLogger implements Logger { /* all 6 log methods */ }
+const defaultLogger: ConsoleLogger;  // Singleton instance
+```
+
+### `@apogeelabs/hoppity-rpc`
+
+```typescript
+function withRpcSupport(options: RpcMiddlewareOptions): MiddlewareFunction;
+```
+
+### `@apogeelabs/hoppity-delayed-publish`
+
+```typescript
+function withDelayedPublish(options: DelayedPublishOptions): MiddlewareFunction;
+```
+
+### `@apogeelabs/hoppity-subscriptions`
+
+```typescript
+function withSubscriptions(handlers: SubscriptionHandlers): MiddlewareFunction;
+function validateSubscriptionHandlers(
+    topology: BrokerConfig,
+    handlers: SubscriptionHandlers
+): ValidationResult;
+```
+
+### `@apogeelabs/hoppity-logger`
+
+```typescript
+function withCustomLogger(options: WithCustomLoggerOptions): MiddlewareFunction;
+```
+
+## Per-Function Usage Examples
+
+### hoppity — `withTopology` + `use` + `build`
+
+```typescript
+import hoppity from "@apogeelabs/hoppity";
+import { BrokerConfig } from "rascal";
+
+const topology: BrokerConfig = {
+    vhosts: {
+        "/": {
+            connection: {
+                hostname: "localhost",
+                user: "guest",
+                password: "guest",
+                port: 5672,
+                vhost: "/",
+            },
+            exchanges: {
+                events: { type: "topic" },
+            },
+            queues: {
+                event_queue: {},
+            },
+            bindings: {
+                event_binding: {
+                    source: "events",
+                    destination: "event_queue",
+                    bindingKey: "event.#",
+                },
+            },
+            publications: {
+                publish_event: {
+                    exchange: "events",
+                    routingKey: "event.created",
+                },
+            },
+            subscriptions: {
+                on_event: {
+                    queue: "event_queue",
+                    prefetch: 1,
+                },
+            },
+        },
+    },
+};
+
+const broker = await hoppity
+    .withTopology(topology)
+    .use(someMiddleware)
+    .build();
+```
+
+### hoppity — Starting without initial topology
+
+```typescript
+// You can also start with .use() directly (topology defaults to {})
+const broker = await hoppity
+    .use(middlewareThatSetsUpTopology)
+    .use(anotherMiddleware)
+    .build();
+```
+
+### withRpcSupport
+
+```typescript
+import hoppity from "@apogeelabs/hoppity";
+import { withRpcSupport, RpcBroker } from "@apogeelabs/hoppity-rpc";
+import { randomUUID } from "crypto";
+
+const broker = await hoppity
+    .withTopology(baseTopology)
+    .use(
+        withRpcSupport({
+            serviceName: "order-service",
+            instanceId: randomUUID(),
+            rpcExchange: "rpc_requests",
+            defaultTimeout: 15_000,
+        })
+    )
+    .build() as RpcBroker;
+
+// Register an RPC handler
+broker.addRpcListener<{ orderId: string }, { status: string }>(
+    "order-service.getStatus",
+    async (request) => {
+        return { status: "shipped" };
+    }
+);
+
+// Make an RPC request to another service
+const result = await broker.request<{ userId: string }, { name: string }>(
+    "user-service.getProfile",
+    { userId: "123" }
+);
+```
+
+### withDelayedPublish
+
+```typescript
+import hoppity from "@apogeelabs/hoppity";
+import { withDelayedPublish, DelayedPublishBroker } from "@apogeelabs/hoppity-delayed-publish";
+import { randomUUID } from "crypto";
+
+const broker = await hoppity
+    .withTopology(baseTopology)
+    .use(
+        withDelayedPublish({
+            serviceName: "notification-service",
+            instanceId: randomUUID(),
+            defaultDelay: 30_000,
+            maxRetries: 5,
+            retryDelay: 1_000,
+        })
+    )
+    .build() as DelayedPublishBroker;
+
+// Publish with explicit 5-second delay
+await broker.delayedPublish("send_notification", { userId: "123" }, undefined, 5_000);
+
+// Publish with default delay (30 seconds)
+await broker.delayedPublish("send_reminder", { userId: "456" });
+```
+
+### withSubscriptions
+
+```typescript
+import hoppity from "@apogeelabs/hoppity";
+import { withSubscriptions, SubscriptionHandler } from "@apogeelabs/hoppity-subscriptions";
+
+const onOrderCreated: SubscriptionHandler = async (message, content, ackOrNack, broker) => {
+    try {
+        console.log("Order received:", content);
+        ackOrNack(); // Acknowledge
+    } catch (err) {
+        ackOrNack(err as Error); // Reject
+    }
+};
+
+const broker = await hoppity
+    .withTopology(topology) // topology must have a subscription named "on_order_created"
+    .use(
+        withSubscriptions({
+            on_order_created: onOrderCreated,
+        })
+    )
+    .build();
+```
+
+### validateSubscriptionHandlers (standalone validation)
+
+```typescript
+import { validateSubscriptionHandlers } from "@apogeelabs/hoppity-subscriptions";
+
+const result = validateSubscriptionHandlers(topology, {
+    on_order_created: handler1,
+    on_nonexistent: handler2,
+});
+
+if (!result.isValid) {
+    console.error(result.errorMessage);
+    // "Subscription validation failed: Missing subscriptions: on_nonexistent. Available subscriptions: on_order_created"
+}
+```
+
+### withCustomLogger
+
+```typescript
+import hoppity from "@apogeelabs/hoppity";
+import { withCustomLogger, Logger } from "@apogeelabs/hoppity-logger";
+import winston from "winston";
+
+// Wrap Winston to match the Logger interface
+const winstonLogger = winston.createLogger({
+    level: "info",
+    format: winston.format.json(),
+    transports: [new winston.transports.Console()],
+});
+
+const logger: Logger = {
+    silly: (msg, ...args) => winstonLogger.silly(msg, ...args),
+    debug: (msg, ...args) => winstonLogger.debug(msg, ...args),
+    info: (msg, ...args) => winstonLogger.info(msg, ...args),
+    warn: (msg, ...args) => winstonLogger.warn(msg, ...args),
+    error: (msg, ...args) => winstonLogger.error(msg, ...args),
+    critical: (msg, ...args) => winstonLogger.error(msg, ...args), // Winston has no "critical"
+};
+
+// Apply FIRST so downstream middleware can use it
+const broker = await hoppity
+    .withTopology(topology)
+    .use(withCustomLogger({ logger }))
+    .use(withRpcSupport({ serviceName: "my-svc", instanceId: "abc" }))
+    .build();
+```
+
+## Writing Custom Middleware
+
+### Middleware Function Signature
+
+```typescript
+import { MiddlewareFunction, MiddlewareResult, MiddlewareContext } from "@apogeelabs/hoppity";
+import { BrokerConfig, BrokerAsPromised } from "rascal";
+
+const myMiddleware: MiddlewareFunction = (
+    topology: BrokerConfig,
+    context: MiddlewareContext
+): MiddlewareResult => {
+    // 1. Read/modify topology
+    const modified = structuredClone(topology);
+    modified.vhosts ??= {};
+    modified.vhosts["/"] ??= {};
+    modified.vhosts["/"].exchanges ??= {};
+    modified.vhosts["/"].exchanges["my-exchange"] = { type: "topic" };
+
+    // 2. Share data with downstream middleware via context.data
+    context.data.myConfig = { exchangeName: "my-exchange" };
+
+    // 3. Use the logger
+    context.logger.info("My middleware executed");
+
+    // 4. Return modified topology + optional lifecycle hook
+    return {
+        topology: modified,
+        onBrokerCreated: async (broker: BrokerAsPromised) => {
+            // Runs AFTER broker is created, BEFORE build() resolves
+            const sub = await broker.subscribe("my-subscription");
+            sub.on("message", (msg, content, ackOrNack) => {
+                // handle messages
+                ackOrNack();
+            });
+        },
+    };
+};
+```
+
+### Middleware Factory Pattern (parameterized middleware)
+
+```typescript
+interface MyMiddlewareOptions {
+    exchangeName: string;
+    routingKey: string;
+}
+
+function withMyFeature(options: MyMiddlewareOptions): MiddlewareFunction {
+    return (topology: BrokerConfig, context: MiddlewareContext): MiddlewareResult => {
+        const modified = structuredClone(topology);
+        // ... modify topology using options ...
+        return {
+            topology: modified,
+            onBrokerCreated: async (broker) => {
+                // ... setup using options and broker ...
+            },
+        };
+    };
+}
+
+// Usage
+const broker = await hoppity
+    .withTopology(base)
+    .use(withMyFeature({ exchangeName: "events", routingKey: "event.#" }))
+    .build();
+```
+
+### Middleware Lifecycle
+
+1. All middleware functions execute **sequentially** during `.build()`
+2. Each receives the **cumulative** topology (modified by all prior middleware)
+3. `context` is **shared** — mutations to `context.data` are visible downstream
+4. `onBrokerCreated` callbacks execute **sequentially after** broker creation
+5. If a callback fails, the broker is **shut down** before the error propagates
+
+## Canonical Examples
+
+### Example 1: Basic Pub/Sub with Custom Logger and Subscriptions
+
+```typescript
+import hoppity, { MiddlewareContext } from "@apogeelabs/hoppity";
+import { withCustomLogger } from "@apogeelabs/hoppity-logger";
+import { withSubscriptions, SubscriptionHandler } from "@apogeelabs/hoppity-subscriptions";
+import { BrokerConfig, BrokerAsPromised } from "rascal";
+
+const topology: BrokerConfig = {
+    vhosts: {
+        "/": {
+            connection: {
+                hostname: "localhost",
+                user: "guest",
+                password: "guest",
+                port: 5672,
+                vhost: "/",
+            },
+            exchanges: {
+                events: { type: "topic" },
+            },
+            queues: {
+                event_queue: {},
+            },
+            bindings: {
+                event_binding: {
+                    source: "events",
+                    destination: "event_queue",
+                    bindingKey: "event.#",
+                },
+            },
+            publications: {
+                publish_event: {
+                    exchange: "events",
+                    routingKey: "event.created",
+                },
+            },
+            subscriptions: {
+                on_event: {
+                    queue: "event_queue",
+                    prefetch: 1,
+                },
+            },
+        },
+    },
+};
+
+const handleEvent: SubscriptionHandler = async (message, content, ackOrNack, broker) => {
+    console.log("Received event:", content);
+    ackOrNack();
+};
+
+const broker = await hoppity
+    .withTopology(topology)
+    .use(withCustomLogger({ logger: myLogger }))
+    .use(withSubscriptions({ on_event: handleEvent }))
+    .build();
+
+// Publish a message
+const publication = await broker.publish("publish_event", { type: "user.created", userId: "123" });
+publication.on("error", console.error);
+
+// Graceful shutdown
+process.on("SIGTERM", async () => {
+    await broker.shutdown();
+});
+```
+
+### Example 2: RPC Between Two Services
+
+```typescript
+// --- Handler Service ---
+import hoppity from "@apogeelabs/hoppity";
+import { withRpcSupport, RpcBroker } from "@apogeelabs/hoppity-rpc";
+import { randomUUID } from "crypto";
+
+const handlerBroker = await hoppity
+    .withTopology(baseTopology)
+    .use(
+        withRpcSupport({
+            serviceName: "user-service",
+            instanceId: randomUUID(),
+        })
+    )
+    .build() as RpcBroker;
+
+handlerBroker.addRpcListener<{ userId: string }, { name: string; email: string }>(
+    "user-service.getProfile",
+    async (request) => {
+        // Look up user by ID
+        return { name: "Jane Doe", email: "jane@example.com" };
+    }
+);
+
+// --- Requester Service ---
+const requesterBroker = await hoppity
+    .withTopology(baseTopology)
+    .use(
+        withRpcSupport({
+            serviceName: "api-gateway",
+            instanceId: randomUUID(),
+        })
+    )
+    .build() as RpcBroker;
+
+const profile = await requesterBroker.request<{ userId: string }, { name: string; email: string }>(
+    "user-service.getProfile",
+    { userId: "42" }
+);
+console.log(profile.name); // "Jane Doe"
+```
+
+### Example 3: Delayed Publishing with Retry
+
+```typescript
+import hoppity from "@apogeelabs/hoppity";
+import { withDelayedPublish, DelayedPublishBroker } from "@apogeelabs/hoppity-delayed-publish";
+import { withSubscriptions, SubscriptionHandler } from "@apogeelabs/hoppity-subscriptions";
+import { withCustomLogger } from "@apogeelabs/hoppity-logger";
+import { randomUUID } from "crypto";
+
+const handleNotification: SubscriptionHandler = async (message, content, ackOrNack) => {
+    console.log("Sending notification:", content);
+    ackOrNack();
+};
+
+const broker = await hoppity
+    .withTopology(topology)
+    .use(withCustomLogger({ logger: myLogger }))
+    .use(
+        withDelayedPublish({
+            serviceName: "notification-svc",
+            instanceId: randomUUID(),
+            defaultDelay: 60_000,     // 1 minute default delay
+            maxRetries: 3,
+            retryDelay: 2_000,
+        })
+    )
+    .use(withSubscriptions({ on_notification: handleNotification }))
+    .build() as DelayedPublishBroker;
+
+// Schedule a notification for 5 minutes from now
+await broker.delayedPublish(
+    "send_notification",
+    { userId: "123", message: "Your order has shipped!" },
+    undefined,
+    300_000
+);
+```
+
+### Example 4: Composing All Middleware
+
+```typescript
+import hoppity from "@apogeelabs/hoppity";
+import { withCustomLogger } from "@apogeelabs/hoppity-logger";
+import { withRpcSupport, RpcBroker } from "@apogeelabs/hoppity-rpc";
+import { withDelayedPublish, DelayedPublishBroker } from "@apogeelabs/hoppity-delayed-publish";
+import { withSubscriptions } from "@apogeelabs/hoppity-subscriptions";
+import { randomUUID } from "crypto";
+
+const broker = await hoppity
+    .withTopology(topology)
+    .use(withCustomLogger({ logger }))            // 1. Logger first
+    .use(withRpcSupport({                          // 2. RPC support
+        serviceName: "order-service",
+        instanceId: randomUUID(),
+    }))
+    .use(withDelayedPublish({                      // 3. Delayed publish
+        serviceName: "order-service",
+        instanceId: randomUUID(),
+    }))
+    .use(withSubscriptions({                       // 4. Subscriptions last
+        on_order_created: handleOrder,
+    }))
+    .build() as RpcBroker & DelayedPublishBroker;
+
+// Now broker has .request(), .addRpcListener(), and .delayedPublish()
+```
+
+## Common Mistakes / Do NOT Do This
+
+### Wrong: Importing from sub-paths
+
+```typescript
+// ❌ WRONG — no deep imports exist
+import { RascalBuilder } from "@apogeelabs/hoppity/dist/RascalBuilder";
+import { setupRpcBroker } from "@apogeelabs/hoppity-rpc/dist/setupRpcBroker";
+import { handleReadyMessage } from "@apogeelabs/hoppity-delayed-publish/dist/handleReadyMessage";
+
+// ✅ CORRECT — always import from package root
+import hoppity from "@apogeelabs/hoppity";
+import { withRpcSupport } from "@apogeelabs/hoppity-rpc";
+import { withDelayedPublish } from "@apogeelabs/hoppity-delayed-publish";
+```
+
+### Wrong: Using `hoppity` as a constructor
+
+```typescript
+// ❌ WRONG — hoppity is a plain object, not a class
+const builder = new hoppity();
+const builder = new Hoppity();
+
+// ✅ CORRECT — use the static methods
+const builder = hoppity.withTopology(config);
+const builder = hoppity.use(middleware);
+```
+
+### Wrong: Returning Promise from middleware function
+
+```typescript
+// ❌ WRONG — middleware functions are synchronous
+const myMiddleware: MiddlewareFunction = async (topology, context) => {
+    const data = await fetchSomething(); // NO async in middleware body
+    return { topology };
+};
+
+// ✅ CORRECT — do async work in onBrokerCreated
+const myMiddleware: MiddlewareFunction = (topology, context) => {
+    return {
+        topology,
+        onBrokerCreated: async (broker) => {
+            const data = await fetchSomething(); // Async work goes here
+        },
+    };
+};
+```
+
+### Wrong: Mutating topology in-place
+
+```typescript
+// ❌ WRONG — don't mutate the received topology object
+const myMiddleware: MiddlewareFunction = (topology, context) => {
+    topology.vhosts["/"].exchanges["new"] = { type: "topic" }; // Mutation!
+    return { topology };
+};
+
+// ✅ CORRECT — clone first, then modify
+const myMiddleware: MiddlewareFunction = (topology, context) => {
+    const modified = structuredClone(topology);
+    modified.vhosts ??= {};
+    modified.vhosts["/"] ??= {};
+    modified.vhosts["/"].exchanges ??= {};
+    modified.vhosts["/"].exchanges["new"] = { type: "topic" };
+    return { topology: modified };
+};
+```
+
+### Wrong: Forgetting `.build()`
+
+```typescript
+// ❌ WRONG — this is a BuilderInterface, not a broker
+const broker = hoppity.withTopology(topology).use(middleware);
+await broker.publish("foo", {}); // TypeError: broker.publish is not a function
+
+// ✅ CORRECT — call .build() to get the broker
+const broker = await hoppity.withTopology(topology).use(middleware).build();
+await broker.publish("foo", {});
+```
+
+### Wrong: Accessing broker methods without casting
+
+```typescript
+// ❌ WRONG — TypeScript won't know about .request() or .delayedPublish()
+const broker = await hoppity.withTopology(t).use(withRpcSupport(opts)).build();
+broker.request("foo", {}); // Property 'request' does not exist
+
+// ✅ CORRECT — cast to the extended broker type
+const broker = await hoppity.withTopology(t).use(withRpcSupport(opts)).build() as RpcBroker;
+broker.request("foo", {});
+
+// Or for multiple middleware:
+const broker = await hoppity
+    .withTopology(t)
+    .use(withRpcSupport(opts))
+    .use(withDelayedPublish(opts2))
+    .build() as RpcBroker & DelayedPublishBroker;
+```
+
+### Wrong: Putting withCustomLogger after other middleware
+
+```typescript
+// ❌ WRONG — middleware before withCustomLogger won't use the custom logger
+const broker = await hoppity
+    .withTopology(topology)
+    .use(withRpcSupport(opts))         // Uses default ConsoleLogger
+    .use(withCustomLogger({ logger })) // Too late for RPC middleware
+    .build();
+
+// ✅ CORRECT — logger first
+const broker = await hoppity
+    .withTopology(topology)
+    .use(withCustomLogger({ logger })) // All subsequent middleware use this logger
+    .use(withRpcSupport(opts))
+    .build();
+```
+
+### Wrong: Subscription handler key doesn't match topology
+
+```typescript
+// ❌ WRONG — handler key must exactly match a subscription name in the topology
+const broker = await hoppity
+    .withTopology(topology) // has subscription named "on_order_created"
+    .use(withSubscriptions({
+        order_created: handler, // Wrong key! Should be "on_order_created"
+    }))
+    .build();
+// Error: "Subscription validation failed: Missing subscriptions: order_created"
+
+// ✅ CORRECT — key matches exactly
+    .use(withSubscriptions({
+        on_order_created: handler,
+    }))
+```
+
+### Wrong: SubscriptionHandler with wrong argument count
+
+```typescript
+// ❌ WRONG — missing the broker (4th argument)
+const handler: SubscriptionHandler = (message, content, ackOrNack) => {
+    // Missing broker parameter
+};
+
+// ✅ CORRECT — all 4 parameters
+const handler: SubscriptionHandler = (message, content, ackOrNack, broker) => {
+    ackOrNack();
+};
+```
+
+### Wrong: Not handling errors in subscription handlers
+
+```typescript
+// ❌ WRONG — unhandled error will nack with default behavior
+const handler: SubscriptionHandler = async (message, content, ackOrNack, broker) => {
+    const result = await processOrder(content); // If this throws, message is nacked
+    // but you get no control over the error response
+};
+
+// ✅ CORRECT — explicit error handling
+const handler: SubscriptionHandler = async (message, content, ackOrNack, broker) => {
+    try {
+        const result = await processOrder(content);
+        ackOrNack();
+    } catch (err) {
+        console.error("Failed to process:", err);
+        ackOrNack(err as Error, { strategy: "nack", requeue: false });
+    }
+};
+```
+
+## Complete Import Reference
+
+Every valid import path — there are **NO deep import paths**.
+
+```typescript
+// @apogeelabs/hoppity
+import hoppity from "@apogeelabs/hoppity";                          // Default: builder entry point
+import type { MiddlewareFunction } from "@apogeelabs/hoppity";
+import type { MiddlewareContext } from "@apogeelabs/hoppity";
+import type { MiddlewareResult } from "@apogeelabs/hoppity";
+import type { BuilderInterface } from "@apogeelabs/hoppity";
+import type { BrokerCreatedCallback } from "@apogeelabs/hoppity";
+import type { BrokerWithExtensions } from "@apogeelabs/hoppity";
+import type { Hoppity } from "@apogeelabs/hoppity";
+import type { Logger } from "@apogeelabs/hoppity";
+import { ConsoleLogger } from "@apogeelabs/hoppity";
+import { defaultLogger } from "@apogeelabs/hoppity";
+
+// @apogeelabs/hoppity-rpc
+import { withRpcSupport } from "@apogeelabs/hoppity-rpc";
+import { RpcErrorCode } from "@apogeelabs/hoppity-rpc";
+import type { RpcMiddlewareOptions } from "@apogeelabs/hoppity-rpc";
+import type { RpcRequest } from "@apogeelabs/hoppity-rpc";
+import type { RpcResponse } from "@apogeelabs/hoppity-rpc";
+import type { RpcBroker } from "@apogeelabs/hoppity-rpc";
+import type { Logger } from "@apogeelabs/hoppity-rpc";              // Re-exported from core
+
+// @apogeelabs/hoppity-delayed-publish
+import { withDelayedPublish } from "@apogeelabs/hoppity-delayed-publish";
+import { DelayedPublishError } from "@apogeelabs/hoppity-delayed-publish";
+import { DelayedPublishErrorCode } from "@apogeelabs/hoppity-delayed-publish";
+import type { DelayedPublishOptions } from "@apogeelabs/hoppity-delayed-publish";
+import type { DelayedMessage } from "@apogeelabs/hoppity-delayed-publish";
+import type { DelayedPublishBroker } from "@apogeelabs/hoppity-delayed-publish";
+
+// @apogeelabs/hoppity-subscriptions
+import { withSubscriptions } from "@apogeelabs/hoppity-subscriptions";
+import { validateSubscriptionHandlers } from "@apogeelabs/hoppity-subscriptions";
+import type { SubscriptionHandler } from "@apogeelabs/hoppity-subscriptions";
+import type { SubscriptionHandlers } from "@apogeelabs/hoppity-subscriptions";
+import type { ValidationResult } from "@apogeelabs/hoppity-subscriptions";
+
+// @apogeelabs/hoppity-logger
+import { withCustomLogger } from "@apogeelabs/hoppity-logger";
+import type { WithCustomLoggerOptions } from "@apogeelabs/hoppity-logger";
+import type { Logger } from "@apogeelabs/hoppity-logger";           // Re-exported from core
+```
+
+⚠️ There are **NO** other valid import paths. Do not attempt to import from `dist/`, sub-modules, or internal files.
+
+## Established Patterns
+
+### Singleton Broker Pattern
+
+Each service typically creates one broker instance and reuses it:
+
+```typescript
+let brokerInstance: BrokerAsPromised | null = null;
+
+export async function getBroker(): Promise<BrokerAsPromised> {
+    if (brokerInstance) return brokerInstance;
+    brokerInstance = await hoppity.withTopology(topology).use(middleware).build();
+    return brokerInstance;
+}
+```
+
+### Graceful Shutdown
+
+```typescript
+async function shutdown(broker: BrokerAsPromised): Promise<void> {
+    await broker.shutdown();
+    process.exit(0);
+}
+
+process.on("SIGTERM", () => shutdown(broker));
+process.on("SIGINT", () => shutdown(broker));
+```
+
+### Topology Separation
+
+Define topology in a dedicated file, separate from broker creation:
+
+```typescript
+// messaging/topology.ts
+export const topology: BrokerConfig = { /* ... */ };
+
+// messaging/broker.ts
+import { topology } from "./topology";
+export async function createBroker() {
+    return hoppity.withTopology(topology).use(...).build();
+}
+```
+
+### Middleware Ordering Convention
+
+```
+1. withCustomLogger       — Logger first (so all others can use it)
+2. withRpcSupport         — Topology additions
+3. withDelayedPublish     — Topology additions
+4. withSubscriptions      — Validates + wires (should be last, after topology is finalized)
+5. Custom middleware       — Your own middleware, ordered by dependency
+```

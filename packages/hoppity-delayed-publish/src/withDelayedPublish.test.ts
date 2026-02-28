@@ -139,7 +139,6 @@ describe("packages > hoppity-delayed-publish > src > withDelayedPublish", () => 
                     serviceName: "PIZZA_SERVICE",
                     instanceId: "INSTANCE_8675309",
                     defaultDelay: 60000,
-                    logger: mockLogger,
                 };
                 middlewareFunction = withDelayedPublish(options);
             });
@@ -204,7 +203,7 @@ describe("packages > hoppity-delayed-publish > src > withDelayedPublish", () => 
                         expect(result.topology.vhosts!["/"].queues).toEqual({
                             PIZZA_SERVICE_wait: {
                                 options: {
-                                    durable: false,
+                                    durable: true,
                                     autoDelete: false,
                                     arguments: {
                                         "x-dead-letter-exchange": "",
@@ -214,13 +213,13 @@ describe("packages > hoppity-delayed-publish > src > withDelayedPublish", () => 
                             },
                             PIZZA_SERVICE_ready: {
                                 options: {
-                                    durable: false,
+                                    durable: true,
                                     autoDelete: false,
                                 },
                             },
                             PIZZA_SERVICE_delayed_errors: {
                                 options: {
-                                    durable: false,
+                                    durable: true,
                                     autoDelete: false,
                                 },
                             },
@@ -240,7 +239,7 @@ describe("packages > hoppity-delayed-publish > src > withDelayedPublish", () => 
                                 exchange: "",
                                 routingKey: "PIZZA_SERVICE_wait",
                                 options: {
-                                    persistent: false,
+                                    persistent: true,
                                 },
                             },
                         });
@@ -278,7 +277,7 @@ describe("packages > hoppity-delayed-publish > src > withDelayedPublish", () => 
                             existing_queue: { options: {} },
                             PIZZA_SERVICE_wait: {
                                 options: {
-                                    durable: false,
+                                    durable: true,
                                     autoDelete: false,
                                     arguments: {
                                         "x-dead-letter-exchange": "",
@@ -288,13 +287,13 @@ describe("packages > hoppity-delayed-publish > src > withDelayedPublish", () => 
                             },
                             PIZZA_SERVICE_ready: {
                                 options: {
-                                    durable: false,
+                                    durable: true,
                                     autoDelete: false,
                                 },
                             },
                             PIZZA_SERVICE_delayed_errors: {
                                 options: {
-                                    durable: false,
+                                    durable: true,
                                     autoDelete: false,
                                 },
                             },
@@ -317,7 +316,7 @@ describe("packages > hoppity-delayed-publish > src > withDelayedPublish", () => 
                                 exchange: "",
                                 routingKey: "PIZZA_SERVICE_wait",
                                 options: {
-                                    persistent: false,
+                                    persistent: true,
                                 },
                             },
                         });
@@ -424,6 +423,35 @@ describe("packages > hoppity-delayed-publish > src > withDelayedPublish", () => 
                     });
                 });
 
+                describe("when durable is set to false", () => {
+                    beforeEach(() => {
+                        options.durable = false;
+                        middlewareFunction = withDelayedPublish(options);
+                        result = middlewareFunction(mockTopology, mockContext);
+                    });
+
+                    it("should set queues as non-durable", () => {
+                        const vhost = result.topology.vhosts!["/"];
+                        expect((vhost.queues as any).PIZZA_SERVICE_wait.options.durable).toBe(
+                            false
+                        );
+                        expect((vhost.queues as any).PIZZA_SERVICE_ready.options.durable).toBe(
+                            false
+                        );
+                        expect(
+                            (vhost.queues as any).PIZZA_SERVICE_delayed_errors.options.durable
+                        ).toBe(false);
+                    });
+
+                    it("should set publication as non-persistent", () => {
+                        const vhost = result.topology.vhosts!["/"];
+                        expect(
+                            (vhost.publications as any).PIZZA_SERVICE_delayed_wait.options
+                                .persistent
+                        ).toBe(false);
+                    });
+                });
+
                 describe("when onBrokerCreated callback is called", () => {
                     beforeEach(() => {
                         result.onBrokerCreated!(mockBroker);
@@ -435,87 +463,6 @@ describe("packages > hoppity-delayed-publish > src > withDelayedPublish", () => 
                             options,
                             mockLogger
                         );
-                    });
-
-                    describe("when context has no logger", () => {
-                        beforeEach(async () => {
-                            // Create a new middleware function with a fresh context that has a no-op logger
-                            const newContext = {
-                                middlewareNames: ["test-middleware"],
-                                data: {},
-                                logger: {
-                                    silly: jest.fn(),
-                                    debug: jest.fn(),
-                                    info: jest.fn(),
-                                    warn: jest.fn(),
-                                    error: jest.fn(),
-                                    critical: jest.fn(),
-                                },
-                            };
-                            result = middlewareFunction(mockTopology, newContext);
-                            await result.onBrokerCreated!(mockBroker);
-                        });
-
-                        it("should use logger from options", () => {
-                            expect(mockSetupDelayedPublishBroker).toHaveBeenCalledWith(
-                                mockBroker,
-                                options,
-                                options.logger
-                            );
-                        });
-                    });
-
-                    describe("when context logger is falsy in onBrokerCreated callback", () => {
-                        beforeEach(async () => {
-                            // Create a middleware function that will have a falsy logger in the callback
-                            const middlewareWithFalsyLogger = (topology: any, context: any) => {
-                                // Call the original middleware function
-                                const result = middlewareFunction(topology, context);
-
-                                // Override the onBrokerCreated callback to test fallback logic
-                                if (result.onBrokerCreated) {
-                                    const originalCallback = result.onBrokerCreated;
-                                    result.onBrokerCreated = async (broker: any) => {
-                                        // Temporarily make context.logger falsy to test the fallback
-                                        const originalLogger = context.logger;
-                                        context.logger = null;
-
-                                        try {
-                                            await originalCallback(broker);
-                                        } finally {
-                                            // Restore the original logger
-                                            context.logger = originalLogger;
-                                        }
-                                    };
-                                }
-
-                                return result;
-                            };
-
-                            const newContext = {
-                                middlewareNames: ["test-middleware"],
-                                data: {},
-                                logger: {
-                                    silly: jest.fn(),
-                                    debug: jest.fn(),
-                                    info: jest.fn(),
-                                    warn: jest.fn(),
-                                    error: jest.fn(),
-                                    critical: jest.fn(),
-                                },
-                            };
-
-                            result = middlewareWithFalsyLogger(mockTopology, newContext);
-                            await result.onBrokerCreated!(mockBroker);
-                        });
-
-                        it("should use logger from options when context logger is falsy", () => {
-                            expect(mockSetupDelayedPublishBroker).toHaveBeenCalledWith(
-                                mockBroker,
-                                options,
-                                options.logger
-                            );
-                        });
                     });
                 });
             });

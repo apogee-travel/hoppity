@@ -219,7 +219,7 @@ describe("packages > hoppity-delayed-publish > src > handleReadyMessage", () => 
                     {
                         options: {
                             expiration: 1000,
-                            persistent: false,
+                            persistent: true,
                         },
                     }
                 );
@@ -259,7 +259,7 @@ describe("packages > hoppity-delayed-publish > src > handleReadyMessage", () => 
                     },
                     {
                         options: {
-                            persistent: false,
+                            persistent: true,
                         },
                     }
                 );
@@ -314,7 +314,7 @@ describe("packages > hoppity-delayed-publish > src > handleReadyMessage", () => 
                     },
                     {
                         options: {
-                            persistent: false,
+                            persistent: true,
                         },
                     }
                 );
@@ -458,7 +458,7 @@ describe("packages > hoppity-delayed-publish > src > handleReadyMessage", () => 
                 }),
                 {
                     options: {
-                        persistent: false,
+                        persistent: true,
                     },
                 }
             );
@@ -562,6 +562,70 @@ describe("packages > hoppity-delayed-publish > src > handleReadyMessage", () => 
                     {
                         options: {
                             expiration: 2500,
+                            persistent: true,
+                        },
+                    }
+                );
+            });
+        });
+
+        describe("with persistent set to false", () => {
+            beforeEach(async () => {
+                delayedMessage.retryCount = 1;
+                broker.publish.mockRejectedValueOnce(new Error("E_COLD_CALZONE"));
+                const mod = await import("./handleReadyMessage");
+                try {
+                    await mod.handleReadyMessage(broker, delayedMessage, logger, "wait_queue", {
+                        maxRetries: 5,
+                        retryDelay: 1000,
+                        persistent: false,
+                    });
+                } catch {
+                    // Expected to throw
+                }
+            });
+
+            it("should publish retry message with persistent: false", () => {
+                expect(broker.publish).toHaveBeenNthCalledWith(
+                    2,
+                    "wait_queue",
+                    expect.objectContaining({ retryCount: 2 }),
+                    {
+                        options: {
+                            expiration: 1000,
+                            persistent: false,
+                        },
+                    }
+                );
+            });
+        });
+
+        describe("with persistent set to false when max retries exceeded", () => {
+            beforeEach(async () => {
+                delayedMessage.retryCount = 5;
+                broker.publish.mockRejectedValueOnce(new Error("E_COLD_CALZONE"));
+                broker.publish.mockResolvedValueOnce(undefined);
+                const mod = await import("./handleReadyMessage");
+                try {
+                    await mod.handleReadyMessage(broker, delayedMessage, logger, undefined, {
+                        maxRetries: 5,
+                        retryDelay: 1000,
+                        persistent: false,
+                    });
+                } catch {
+                    // Expected to throw
+                }
+            });
+
+            it("should publish error message with persistent: false", () => {
+                expect(broker.publish).toHaveBeenNthCalledWith(
+                    2,
+                    "user_events_delayed_error",
+                    expect.objectContaining({
+                        errorCode: DelayedPublishErrorCode.MAX_RETRIES_EXCEEDED,
+                    }),
+                    {
+                        options: {
                             persistent: false,
                         },
                     }

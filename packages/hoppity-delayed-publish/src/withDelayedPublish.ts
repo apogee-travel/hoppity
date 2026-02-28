@@ -29,7 +29,7 @@ export const withDelayedPublish = (options: DelayedPublishOptions): MiddlewareFu
         );
     }
 
-    const { serviceName, instanceId, defaultDelay = 30_000 } = options;
+    const { serviceName, instanceId, defaultDelay = 30_000, durable = true } = options;
 
     return (topology: BrokerConfig, context: MiddlewareContext): MiddlewareResult => {
         context.logger.info(
@@ -79,7 +79,7 @@ export const withDelayedPublish = (options: DelayedPublishOptions): MiddlewareFu
             const waitQueueName = `${serviceName}_wait`;
             (vhost.queues as any)[waitQueueName] = {
                 options: {
-                    durable: false, // Don't survive broker restarts as per requirements
+                    durable,
                     autoDelete: false,
                     arguments: {
                         "x-dead-letter-exchange": "", // Default direct exchange
@@ -92,7 +92,7 @@ export const withDelayedPublish = (options: DelayedPublishOptions): MiddlewareFu
             const readyQueueName = `${serviceName}_ready`;
             (vhost.queues as any)[readyQueueName] = {
                 options: {
-                    durable: false,
+                    durable,
                     autoDelete: false,
                 },
             };
@@ -101,7 +101,7 @@ export const withDelayedPublish = (options: DelayedPublishOptions): MiddlewareFu
             const errorQueueName = `${serviceName}_delayed_errors`;
             (vhost.queues as any)[errorQueueName] = {
                 options: {
-                    durable: false,
+                    durable,
                     autoDelete: false,
                 },
             };
@@ -114,7 +114,7 @@ export const withDelayedPublish = (options: DelayedPublishOptions): MiddlewareFu
                 exchange: "", // Default direct exchange
                 routingKey: waitQueueName,
                 options: {
-                    persistent: false,
+                    persistent: durable,
                 },
             };
 
@@ -143,8 +143,7 @@ export const withDelayedPublish = (options: DelayedPublishOptions): MiddlewareFu
         return {
             topology: modifiedTopology,
             onBrokerCreated: async broker => {
-                // Use logger from context if available, otherwise use the one from options
-                const logger = context.logger || options.logger;
+                const logger = context.logger;
                 await setupDelayedPublishBroker(broker, options, logger);
             },
         };

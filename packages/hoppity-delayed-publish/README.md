@@ -56,7 +56,9 @@ Middleware function that adds delayed publish capabilities to your hoppity broke
 - `serviceName` (required): The name of the service (used for queue naming)
 - `instanceId` (required): Unique instance identifier (used for queue naming)
 - `defaultDelay` (optional): Default delay in milliseconds when no delay is specified (default: 30000)
-- `logger` (optional): Logger instance for delayed publish operations
+- `maxRetries` (optional): Max retry attempts when re-publish fails (default: 5)
+- `retryDelay` (optional): Delay in ms between retry attempts (default: 1000)
+- `durable` (optional): Whether queues and messages survive broker restarts (default: true)
 
 ### `broker.delayedPublish(publication, message, overrides?, delay?)`
 
@@ -115,7 +117,7 @@ const modifiedTopology = {
             queues: {
                 "my-service_wait": {
                     options: {
-                        durable: false,
+                        durable: true,
                         autoDelete: false,
                         arguments: {
                             "x-dead-letter-exchange": "", // Default direct exchange
@@ -125,13 +127,13 @@ const modifiedTopology = {
                 },
                 "my-service_ready": {
                     options: {
-                        durable: false,
+                        durable: true,
                         autoDelete: false,
                     },
                 },
                 "my-service_delayed_errors": {
                     options: {
-                        durable: false,
+                        durable: true,
                         autoDelete: false,
                     },
                 },
@@ -141,7 +143,7 @@ const modifiedTopology = {
                     exchange: "", // Default direct exchange
                     routingKey: "my-service_wait",
                     options: {
-                        persistent: false,
+                        persistent: true,
                     },
                 },
             },

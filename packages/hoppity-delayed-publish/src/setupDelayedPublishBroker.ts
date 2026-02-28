@@ -34,7 +34,13 @@ export async function setupDelayedPublishBroker(
     options: DelayedPublishOptions,
     logger?: Logger
 ): Promise<void> {
-    const { serviceName, defaultDelay = 30_000, maxRetries = 5, retryDelay = 1000 } = options;
+    const {
+        serviceName,
+        defaultDelay = 30_000,
+        maxRetries = 5,
+        retryDelay = 1000,
+        durable = true,
+    } = options;
 
     // Hoppity uses service-based queue naming to prevent conflicts
     // between different services and instances. This is different from Rascal's direct
@@ -55,6 +61,7 @@ export async function setupDelayedPublishBroker(
             await handleReadyMessage(broker, delayedMessage, logger, waitPublicationName, {
                 maxRetries,
                 retryDelay,
+                persistent: durable,
             });
             ackOrNack();
         } catch (error) {
@@ -105,7 +112,7 @@ export async function setupDelayedPublishBroker(
             await broker.publish(waitPublicationName, delayedMessage, {
                 options: {
                     expiration: actualDelay, // This is the TTL in milliseconds
-                    persistent: false, // Non-persistent for better performance in this use case
+                    persistent: durable,
                 },
             });
 

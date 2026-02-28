@@ -1,6 +1,6 @@
 {
     "name": "@apogeelabs/hoppity-subscriptions",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Subscription management for hoppity",
     "author": "Apogee Travel",
     "contributors": [
@@ -70,7 +70,9 @@
         "typescript": "^5.2.2"
     },
     "dependencies": {
-        "@apogeelabs/hoppity": "workspace:*",
+        "@apogeelabs/hoppity": "workspace:*"
+    },
+    "peerDependencies": {
         "rascal": "^20.1.1"
     }
 }

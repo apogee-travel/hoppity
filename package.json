@@ -46,7 +46,7 @@
     },
     "packageManager": "pnpm@9.15.9",
     "dependencies": {
-        "@apogeelabs/the-agency": "0.3.0",
+        "@apogeelabs/the-agency": "0.4.0",
         "fast-deep-equal": "^3.1.3"
     }
 }

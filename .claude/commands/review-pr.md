@@ -1,6 +1,17 @@
 # PR Review Command
 
-You are a PR reviewer assistant. Your job is to give the human reviewer a structured briefing on a pull request before they dive into the diff. You help them update their mental model of the codebase and flag areas that need attention.
+## Goal
+
+Produce a structured briefing on a pull request that primes the reviewer's mental model. Help them understand how the codebase shifted and flag areas that need attention.
+
+## Constraints
+
+- **Be concise.** The reviewer will read the actual diff — your job is to prime their mental model, not replace the diff.
+- **Be specific.** "Some files changed" is useless. "The auth middleware now validates JWTs instead of session cookies" is useful.
+- **Be honest about uncertainty.** If you can't determine why a change was made, say so. "Purpose unclear — reviewer should check with author."
+- **Don't hallucinate.** Only report what you actually see in the diff. If a file wasn't changed, don't claim it was.
+- **Prioritize signal over completeness.** A focused summary of what matters beats an exhaustive list of everything.
+- **No raw file lists.** Do NOT include a "Files Changed" section or dump the `gh pr diff --stat` output. GitHub already shows this. Your job is synthesis, not regurgitation.
 
 ## Step 1: Handle Input and Checkout
 
@@ -39,18 +50,19 @@ gh pr view --json number,title,baseRefName,headRefName,body,additions,deletions,
 
 ## Step 3: Gather Diff Information
 
-Run these commands:
+Use `gh pr diff` to get the diff as GitHub sees it. This avoids stale-local-branch problems where a behind-origin base branch inflates the diff with already-merged changes from other PRs.
 
 ```bash
 # File list with change stats
-git diff --stat $baseRefName...HEAD
+gh pr diff --stat
 
 # Full diff (for analysis)
-git diff $baseRefName...HEAD
-
-# Commit log (excluding merges)
-git log --no-merges --oneline $baseRefName..HEAD
+gh pr diff
 ```
+
+**For commit messages**, use the `commits` array already captured in Step 2 — that is the authoritative commit list for this PR. Do NOT use `git log`, which can include commits from other PRs if the local base branch is behind origin.
+
+**Cross-check**: Compare the file count from `gh pr diff --stat` against the `changedFiles` value from Step 2. If they diverge significantly, flag the discrepancy in your output and prefer the `gh pr view` / `gh pr diff` data as the source of truth.
 
 ## Step 4: Categorize and Filter Files
 
@@ -131,6 +143,10 @@ Scan for and report:
 - Major version bumps
 - Dependencies with known security issues
 
+**Before finalizing risk callouts related to test files (`.test.ts`, `.spec.ts`):**
+
+Read `.ai/UnitTestGeneration.md` (if it exists) and cross-reference any test-related findings against the project's testing conventions. Do NOT flag patterns that conform to those guidelines — they are intentional, not risks.
+
 ## Step 7: Tribal Knowledge Checks
 
 Tribal knowledge checks are loaded dynamically from `.ai/review-checks/`. Each check file is a markdown file with YAML frontmatter.
@@ -188,6 +204,7 @@ Based on the changes in this PR, provide concrete testing recommendations. This 
 - New code paths that lack corresponding tests
 - Behavioral changes that existing tests might not cover
 - Specific test scenarios to add (with enough detail to write the test)
+- **Do NOT recommend tests for React components (`.tsx` files).** We do not unit test React components.
 
 **Regression risks:**
 
@@ -271,12 +288,3 @@ Each block contains:
 
 [If test coverage is already good, say so and note any minor gaps]
 ```
-
-## Important Notes
-
-- **Be concise.** The reviewer will read the actual diff — your job is to prime their mental model, not replace the diff.
-- **Be specific.** "Some files changed" is useless. "The auth middleware now validates JWTs instead of session cookies" is useful.
-- **Be honest about uncertainty.** If you can't determine why a change was made, say so. "Purpose unclear — reviewer should check with author."
-- **Don't hallucinate.** Only report what you actually see in the diff. If a file wasn't changed, don't claim it was.
-- **Prioritize signal over completeness.** A focused summary of what matters beats an exhaustive list of everything.
-- **No raw file lists.** Do NOT include a "Files Changed" section or dump the `git diff --stat` output. GitHub already shows this. Your job is synthesis, not regurgitation.

@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Logger } from "@apogeelabs/hoppity";
 import { BrokerAsPromised, PublicationConfig } from "rascal";
 
 /**
@@ -12,12 +11,12 @@ export interface DelayedPublishOptions {
     instanceId: string;
     /** Default delay in milliseconds when no delay is specified in delayedPublish call */
     defaultDelay?: number;
-    /** Optional logger instance for delayed publish operations */
-    logger?: Logger;
     /** Max retry attempts when re-publish fails (default: 5) */
     maxRetries?: number;
     /** Delay in ms between retry attempts (default: 1000) */
     retryDelay?: number;
+    /** Whether queues and messages should survive broker restarts (default: true) */
+    durable?: boolean;
 }
 
 /**

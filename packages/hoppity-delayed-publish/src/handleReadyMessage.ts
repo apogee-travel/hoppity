@@ -6,6 +6,7 @@ import { type DelayedMessage, DelayedPublishError, DelayedPublishErrorCode } fro
 export interface RetryConfig {
     maxRetries: number;
     retryDelay: number;
+    persistent?: boolean;
 }
 
 /**
@@ -31,6 +32,7 @@ export async function handleReadyMessage(
 ): Promise<void> {
     const maxRetries = retryConfig?.maxRetries ?? 5;
     const retryDelay = retryConfig?.retryDelay ?? 1000;
+    const persistent = retryConfig?.persistent ?? true;
     const retryCount = delayedMessage.retryCount || 0;
 
     try {
@@ -70,7 +72,7 @@ export async function handleReadyMessage(
                 await broker.publish(waitPublicationName, retryMessage, {
                     options: {
                         expiration: retryDelay,
-                        persistent: false,
+                        persistent,
                     },
                 });
             }
@@ -108,7 +110,7 @@ export async function handleReadyMessage(
                 errorMessage,
                 {
                     options: {
-                        persistent: false,
+                        persistent,
                     },
                 }
             );

@@ -91,7 +91,7 @@ export interface RpcBroker extends BrokerAsPromised {
      * @param correlationId - The correlation ID of the request to cancel
      * @returns True if the request was found and cancelled, false otherwise
      */
-    cancelRequest?(correlationId: string): boolean;
+    cancelRequest(correlationId: string): boolean;
 }
 
 /**

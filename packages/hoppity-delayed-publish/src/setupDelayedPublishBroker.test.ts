@@ -118,7 +118,7 @@ describe("packages > hoppity-delayed-publish > src > setupDelayedPublishBroker",
                     content,
                     mockLogger,
                     "TEST_SERVICE_delayed_wait",
-                    { maxRetries: 5, retryDelay: 1000 }
+                    { maxRetries: 5, retryDelay: 1000, persistent: true }
                 );
             });
 
@@ -214,7 +214,7 @@ describe("packages > hoppity-delayed-publish > src > setupDelayedPublishBroker",
                     {
                         options: {
                             expiration: 15000,
-                            persistent: false,
+                            persistent: true,
                         },
                     }
                 );
@@ -247,7 +247,7 @@ describe("packages > hoppity-delayed-publish > src > setupDelayedPublishBroker",
                     {
                         options: {
                             expiration: 30000,
-                            persistent: false,
+                            persistent: true,
                         },
                     }
                 );
@@ -274,7 +274,7 @@ describe("packages > hoppity-delayed-publish > src > setupDelayedPublishBroker",
                     {
                         options: {
                             expiration: 10000,
-                            persistent: false,
+                            persistent: true,
                         },
                     }
                 );
@@ -445,7 +445,7 @@ describe("packages > hoppity-delayed-publish > src > setupDelayedPublishBroker",
                 content,
                 mockLogger,
                 "TEST_SERVICE_delayed_wait",
-                { maxRetries: 10, retryDelay: 3000 }
+                { maxRetries: 10, retryDelay: 3000, persistent: true }
             );
         });
     });
@@ -477,9 +477,54 @@ describe("packages > hoppity-delayed-publish > src > setupDelayedPublishBroker",
                 {
                     options: {
                         expiration: 30000,
+                        persistent: true,
+                    },
+                }
+            );
+        });
+    });
+
+    describe("when durable is set to false", () => {
+        beforeEach(async () => {
+            options.durable = false;
+            const mod = await import("./setupDelayedPublishBroker");
+            await mod.setupDelayedPublishBroker(mockBroker, options, mockLogger);
+        });
+
+        it("should publish with persistent: false", async () => {
+            const delayedPublish = mockBroker.delayedPublish;
+            mockPublish.mockResolvedValue(undefined);
+            await delayedPublish("TEST_PUBLICATION", "TEST_MESSAGE");
+            expect(mockPublish).toHaveBeenCalledWith(
+                "TEST_SERVICE_delayed_wait",
+                expect.any(Object),
+                {
+                    options: {
+                        expiration: 30000,
                         persistent: false,
                     },
                 }
+            );
+        });
+
+        it("should pass persistent: false in retry config to handleReadyMessage", async () => {
+            const messageHandler = mockSubscription.on.mock.calls.find(
+                (call: any) => call[0] === "message"
+            )[1];
+            const content = {
+                originalMessage: "TEST_MESSAGE",
+                originalPublication: "TEST_PUBLICATION",
+                targetDelay: 5000,
+                createdAt: Date.now(),
+                retryCount: 0,
+            };
+            await messageHandler({}, content, mockAckOrNack);
+            expect(mockHandleReadyMessage).toHaveBeenCalledWith(
+                mockBroker,
+                content,
+                mockLogger,
+                "TEST_SERVICE_delayed_wait",
+                { maxRetries: 5, retryDelay: 1000, persistent: false }
             );
         });
     });
