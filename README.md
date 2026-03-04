@@ -6,6 +6,8 @@
 
 **Consistent, pattern-driven RabbitMQ topology and broker configuration for Node.js microservices.**
 
+[📖 Documentation](https://apogee-travel.github.io/hoppity/)
+
 Hoppity builds on [rascal](https://github.com/guidesmiths/rascal) to make RabbitMQ topology management in large Node.js monorepos easier, safer, and more maintainable. It reduces the risk of mistakes and the effort required to manage multiple topology files — especially when using advanced patterns like RPC and delayed publishing.
 
 - **Why?** Rascal is powerful, but managing large, hand-written topology files across many services is error-prone and tedious. Hoppity provides a way to configure rascal's topology and broker in a consistent, pattern-based way, reducing boilerplate and risk.

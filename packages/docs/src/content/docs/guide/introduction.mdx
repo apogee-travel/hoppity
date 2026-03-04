@@ -1,0 +1,56 @@
+---
+title: Introduction
+description: What hoppity is and why it exists.
+---
+
+## What is hoppity?
+
+Hoppity is a pattern-driven RabbitMQ topology builder for Node.js microservices, built on top of [Rascal](https://github.com/guidesmiths/rascal). It provides a composable middleware pipeline where each middleware receives a `BrokerConfig` and a shared `MiddlewareContext`, can modify both, and optionally return an `onBrokerCreated` callback for lifecycle hooks.
+
+## The Problem
+
+Rascal gives you a powerful, configuration-driven way to manage RabbitMQ topologies — exchanges, queues, bindings, publications, and subscriptions all declared in a single config object. But as your microservice estate grows, you end up with:
+
+- Repeated boilerplate across services (the same exchange patterns, the same retry configurations)
+- Topology config objects that balloon into hundreds of lines
+- No clean way to share and compose common patterns (RPC, delayed publish, standard error handling)
+
+## The Solution
+
+Hoppity wraps Rascal's broker creation in a **middleware pipeline**. You start with a base topology and layer on reusable middleware that each handle a specific concern:
+
+```typescript
+import hoppity from "@apogeelabs/hoppity";
+import { withRpc } from "@apogeelabs/hoppity-rpc";
+import { withDelayedPublish } from "@apogeelabs/hoppity-delayed-publish";
+import { withSubscriptions } from "@apogeelabs/hoppity-subscriptions";
+
+const broker = await hoppity()
+    .withTopology(baseTopology)
+    .use(withRpc({ timeout: 5000 }))
+    .use(withDelayedPublish({ delays: [1000, 5000, 30000] }))
+    .use(withSubscriptions(handlers))
+    .build();
+```
+
+Each middleware is a pure function that receives the current topology and a shared context, returns a (possibly modified) topology, and can optionally provide an `onBrokerCreated` callback for post-creation setup.
+
+## Middleware Packages
+
+| Package                               | Purpose                            |
+| ------------------------------------- | ---------------------------------- |
+| `@apogeelabs/hoppity`                 | Core pipeline + builder            |
+| `@apogeelabs/hoppity-rpc`             | Request/reply with correlation IDs |
+| `@apogeelabs/hoppity-delayed-publish` | TTL-based delayed message delivery |
+| `@apogeelabs/hoppity-subscriptions`   | Auto-wired subscription handlers   |
+| `@apogeelabs/hoppity-logger`          | Custom logger injection            |
+
+## How the Pipeline Works
+
+When you call `.build()`, three phases execute in order:
+
+1. **Middleware execution** — Each middleware runs sequentially, receiving the current `BrokerConfig` and shared `MiddlewareContext`. Each returns a (possibly modified) topology and an optional `onBrokerCreated` callback.
+
+2. **Broker creation** — The final topology is passed to `BrokerAsPromised.create()` via Rascal.
+
+3. **Callback execution** — Each `onBrokerCreated` callback runs sequentially. If any callback fails, the broker is shut down before the error propagates.

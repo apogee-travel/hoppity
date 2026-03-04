@@ -1,0 +1,121 @@
+---
+title: Getting Started
+description: Install hoppity and create your first middleware pipeline.
+---
+
+## Installation
+
+Install the core package and whichever middleware you need:
+
+```bash
+# Core (required)
+npm install @apogeelabs/hoppity rascal
+
+# Pick your middleware
+npm install @apogeelabs/hoppity-rpc
+npm install @apogeelabs/hoppity-delayed-publish
+npm install @apogeelabs/hoppity-subscriptions
+npm install @apogeelabs/hoppity-logger
+```
+
+:::note
+`rascal@^20.1.1` is a peer dependency of all hoppity packages. You need to install it directly in your project.
+:::
+
+## Basic Usage
+
+Define a base Rascal topology and run it through the hoppity pipeline:
+
+```typescript
+import hoppity from "@apogeelabs/hoppity";
+
+const topology = {
+    vhosts: {
+        "/": {
+            connection: {
+                url: "amqp://guest:guest@localhost:5672",
+            },
+            exchanges: {
+                events: {
+                    type: "topic",
+                },
+            },
+            queues: {
+                "my-service-queue": {},
+            },
+            bindings: {
+                "events-to-queue": {
+                    source: "events",
+                    destination: "my-service-queue",
+                    bindingKey: "order.#",
+                },
+            },
+            publications: {
+                "publish-event": {
+                    exchange: "events",
+                },
+            },
+            subscriptions: {
+                "listen-for-orders": {
+                    queue: "my-service-queue",
+                },
+            },
+        },
+    },
+};
+
+const broker = await hoppity().withTopology(topology).build();
+```
+
+## Adding Middleware
+
+The real power is in composing middleware. Each `.use()` call adds a middleware to the pipeline:
+
+```typescript
+import hoppity from "@apogeelabs/hoppity";
+import { withCustomLogger } from "@apogeelabs/hoppity-logger";
+import { withRpc } from "@apogeelabs/hoppity-rpc";
+
+const broker = await hoppity()
+    .withTopology(topology)
+    .use(withCustomLogger(myLogger)) // logger first — used by downstream middleware
+    .use(withRpc({ timeout: 5000 }))
+    .build();
+```
+
+:::tip
+Order matters. `withCustomLogger` should go first so downstream middleware uses your custom logger. Subscription middleware should typically go last, after the topology is finalized.
+:::
+
+## Writing Custom Middleware
+
+A middleware is a function that receives the current topology and a shared context:
+
+```typescript
+import type { MiddlewareFunction } from "@apogeelabs/hoppity";
+
+const myMiddleware: MiddlewareFunction = (topology, context) => {
+    context.logger.info("My middleware is running");
+
+    // Modify the topology
+    const modified = {
+        ...topology,
+        // your changes here
+    };
+
+    return {
+        topology: modified,
+        // Optional: run after broker is created
+        onBrokerCreated: async broker => {
+            context.logger.info("Broker is ready");
+        },
+    };
+};
+
+const broker = await hoppity().withTopology(topology).use(myMiddleware).build();
+```
+
+## Next Steps
+
+- Read the [Introduction](/guide/introduction/) for a deeper look at the architecture
+- Browse the API reference in the sidebar for full type documentation

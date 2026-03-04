@@ -1,0 +1,47 @@
+---
+title: hoppity
+description: Pattern-driven RabbitMQ topology builder for Node.js microservices.
+template: splash
+hero:
+    tagline: Pattern-driven RabbitMQ topology builder for Node.js microservices, built on Rascal.
+    image:
+        file: ../../assets/icon-mark.svg
+    actions:
+        - text: Get Started
+          link: /guide/getting-started/
+          icon: right-arrow
+          variant: primary
+        - text: View on GitHub
+          link: https://github.com/apogee-stealth/hoppity
+          icon: external
+          variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+<CardGrid>
+    <Card icon="puzzle" title="Middleware Pipeline">
+        Compose your RabbitMQ topology through a clean middleware pipeline. Each middleware receives
+        the broker config, modifies it, and optionally hooks into the broker lifecycle.
+    </Card>
+    <Card icon="setting" title="Builder Pattern">
+        Fluent API with `withTopology().use(middleware).build()`. Define your base topology, layer
+        on middleware, get back a configured Rascal broker.
+    </Card>
+    <Card icon="seti:typescript" title="TypeScript-First">
+        Written in TypeScript with full type safety. Strict mode, proper generics, no `any`-shaped
+        escape hatches.
+    </Card>
+    <Card icon="rocket" title="Built on Rascal">
+        Standing on the shoulders of a proven RabbitMQ library. Hoppity adds composable patterns on
+        top — RPC, delayed publish, subscriptions, and more.
+    </Card>
+    <Card icon="random" title="RPC Support">
+        Request/reply with correlation IDs, configurable timeouts, and automatic reply queue
+        management via `hoppity-rpc`.
+    </Card>
+    <Card icon="list-format" title="Delayed Publishing">
+        TTL-based delayed message delivery with dead-letter exchange routing via
+        `hoppity-delayed-publish`.
+    </Card>
+</CardGrid>
