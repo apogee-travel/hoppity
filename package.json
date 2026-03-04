@@ -17,10 +17,15 @@
         "changeset": "changeset",
         "version-packages": "changeset version",
         "release": "turbo run build && changeset publish",
+        "checks": "turbo run lint && turbo run test && turbo run build",
         "prepare": "husky"
     },
     "lint-staged": {
-        "*.{ts,tsx,js,jsx,mjs,css,md}": "prettier --write",
+        "*.{ts,tsx,js,jsx,mjs}": [
+            "eslint --fix",
+            "prettier --write"
+        ],
+        "*.{css,md,mdx}": "prettier --write",
         "*.json": "prettier --write"
     },
     "devDependencies": {
@@ -45,6 +50,12 @@
         "node": ">=22"
     },
     "packageManager": "pnpm@9.15.9",
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "sharp",
+            "esbuild"
+        ]
+    },
     "dependencies": {
         "@apogeelabs/the-agency": "0.4.0",
         "fast-deep-equal": "^3.1.3"
