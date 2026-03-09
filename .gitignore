@@ -29,6 +29,9 @@ pnpm-debug.log*
 .env.test.local
 .env.production.local
 
+# astro
+.astro
+
 # misc
 .DS_Store
 *.pem
