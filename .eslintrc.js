@@ -33,5 +33,12 @@ module.exports = {
             },
         ],
     },
-    ignorePatterns: ["dist", "node_modules", ".eslintrc.js", "packages/docs"],
+    ignorePatterns: [
+        "dist",
+        "node_modules",
+        ".eslintrc.js",
+        "jest.config.js",
+        "tsup.config.ts",
+        "packages/docs",
+    ],
 };
