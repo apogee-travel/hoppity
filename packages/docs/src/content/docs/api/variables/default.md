@@ -5,9 +5,9 @@ prev: false
 title: "default"
 ---
 
-> `const` **default**: [`Hoppity`](/api/interfaces/hoppity/)
+> `const` **default**: [`Hoppity`](/hoppity/api/interfaces/hoppity/)
 
-Defined in: [hoppity.ts:11](https://github.com/apogee-stealth/hoppity/blob/c6783951cf3efeb89e1d0641d2afd7496a6ddd04/packages/hoppity/src/hoppity.ts#L11)
+Defined in: [hoppity.ts:11](https://github.com/apogee-travel/hoppity/blob/2a3626e486d3360dc3a1d039d4822c4598c8b024/packages/hoppity/src/hoppity.ts#L11)
 
 Implementation of the Rascal wrapper that provides the main API for the middleware pipeline.
 

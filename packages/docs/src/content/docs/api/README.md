@@ -7,23 +7,23 @@ title: "@apogeelabs/hoppity"
 
 ## Classes
 
-- [ConsoleLogger](/api/classes/consolelogger/)
+- [ConsoleLogger](/hoppity/api/classes/consolelogger/)
 
 ## Interfaces
 
-- [BuilderInterface](/api/interfaces/builderinterface/)
-- [Hoppity](/api/interfaces/hoppity/)
-- [Logger](/api/interfaces/logger/)
-- [MiddlewareContext](/api/interfaces/middlewarecontext/)
-- [MiddlewareResult](/api/interfaces/middlewareresult/)
+- [BuilderInterface](/hoppity/api/interfaces/builderinterface/)
+- [Hoppity](/hoppity/api/interfaces/hoppity/)
+- [Logger](/hoppity/api/interfaces/logger/)
+- [MiddlewareContext](/hoppity/api/interfaces/middlewarecontext/)
+- [MiddlewareResult](/hoppity/api/interfaces/middlewareresult/)
 
 ## Type Aliases
 
-- [BrokerCreatedCallback](/api/type-aliases/brokercreatedcallback/)
-- [BrokerWithExtensions](/api/type-aliases/brokerwithextensions/)
-- [MiddlewareFunction](/api/type-aliases/middlewarefunction/)
+- [BrokerCreatedCallback](/hoppity/api/type-aliases/brokercreatedcallback/)
+- [BrokerWithExtensions](/hoppity/api/type-aliases/brokerwithextensions/)
+- [MiddlewareFunction](/hoppity/api/type-aliases/middlewarefunction/)
 
 ## Variables
 
-- [default](/api/variables/default/)
-- [defaultLogger](/api/variables/defaultlogger/)
+- [default](/hoppity/api/variables/default/)
+- [defaultLogger](/hoppity/api/variables/defaultlogger/)
