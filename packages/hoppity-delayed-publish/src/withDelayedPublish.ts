@@ -39,7 +39,10 @@ export const withDelayedPublish = (options: DelayedPublishOptions): MiddlewareFu
             `[DelayedPublish] Previous middleware: ${context.middlewareNames.join(", ") || "none"}`
         );
 
-        // Check for existing delayed publish configuration to avoid conflicts
+        // Idempotency guard: if another middleware (or a duplicate use() call) has
+        // already written delayedPublishConfig to the shared context, warn rather
+        // than silently overwrite. Two delayed-publish middlewares in the same
+        // pipeline would create duplicate queues and competing subscriptions.
         if (context.data.delayedPublishConfig) {
             context.logger.warn(
                 `[DelayedPublish] Warning: Delayed publish configuration already exists in context from previous middleware`
@@ -60,7 +63,10 @@ export const withDelayedPublish = (options: DelayedPublishOptions): MiddlewareFu
             errorQueueName: `${serviceName}_delayed_errors`,
         };
 
-        // Clone the topology to avoid mutations
+        // Clone so that topology modifications made here don't leak back to
+        // the caller or affect other middleware that may run after this one.
+        // The hoppity core also clones at builder construction, but this second
+        // clone ensures this middleware is self-contained regardless of pipeline order.
         const modifiedTopology = structuredClone(topology);
 
         // Ensure vhosts exist in topology
@@ -82,8 +88,13 @@ export const withDelayedPublish = (options: DelayedPublishOptions): MiddlewareFu
                     durable,
                     autoDelete: false,
                     arguments: {
-                        "x-dead-letter-exchange": "", // Default direct exchange
-                        "x-dead-letter-routing-key": `${serviceName}_ready`, // Dead letter to ready queue
+                        // Uses the default direct exchange ("") rather than declaring
+                        // a custom DLX. The default exchange routes by queue name,
+                        // so we just set the routing key to the ready queue name.
+                        // This avoids creating and managing a dedicated exchange
+                        // that would only exist to shuttle dead-lettered messages.
+                        "x-dead-letter-exchange": "",
+                        "x-dead-letter-routing-key": `${serviceName}_ready`,
                     },
                 },
             };

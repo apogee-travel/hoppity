@@ -3,9 +3,27 @@ import type { Logger } from "@apogeelabs/hoppity";
 import { BrokerAsPromised } from "rascal";
 import { type DelayedMessage, DelayedPublishError, DelayedPublishErrorCode } from "./types";
 
+/**
+ * Configuration for the retry behavior when re-publishing a delayed message fails.
+ *
+ * Retries are implemented by re-publishing the message back to the wait queue with
+ * a short TTL (`retryDelay`), so the message goes through the same dead-letter cycle
+ * again. This avoids tight retry loops and gives the broker time to recover from
+ * transient failures (connection blips, channel errors, etc.).
+ *
+ * @see {@link handleReadyMessage} — the function that uses this config
+ */
 export interface RetryConfig {
+    /** Maximum number of re-publish attempts before routing to the error queue. */
     maxRetries: number;
+    /** Delay in ms between attempts — used as per-message TTL on the wait queue. */
     retryDelay: number;
+    /**
+     * Whether retry messages are persisted to disk.
+     * Mirrors the `durable` option from {@link DelayedPublishOptions}.
+     *
+     * @defaultValue `true`
+     */
     persistent?: boolean;
 }
 
@@ -65,9 +83,13 @@ export async function handleReadyMessage(
                 retryCount: retryCount + 1,
             };
 
-            // RABBITMQ RETRY MECHANISM: Instead of immediate retry, we publish back
-            // to the wait queue with a short TTL. This prevents tight retry loops
-            // and gives the system time to recover from transient issues.
+            // RETRY STRATEGY: Rather than retrying immediately (which would spin in a
+            // tight loop under sustained failure), the message goes back through the
+            // wait queue with a short TTL equal to `retryDelay`. This reuses the
+            // existing dead-letter pipeline — wait queue TTL expires, message lands
+            // back on the ready queue, and we try again. The broker gets breathing
+            // room between attempts, and we get retry counting for free via the
+            // `retryCount` field in the envelope.
             if (waitPublicationName) {
                 await broker.publish(waitPublicationName, retryMessage, {
                     options: {
@@ -90,7 +112,11 @@ export async function handleReadyMessage(
                 }
             );
         } else {
-            // When max retries are exceeded, we send the message to a dedicated error queue.
+            // MAX RETRIES EXHAUSTED: Route to the error queue instead of nacking.
+            // Nacking would requeue the message on the ready queue, creating an
+            // infinite retry loop. The error queue acts as a dead letter destination
+            // where failed messages can be inspected, replayed manually, or
+            // consumed by an alerting/monitoring system.
             logger?.error(
                 `[DelayedPublish] Max retries exceeded for delayed message, sending to error queue`
             );

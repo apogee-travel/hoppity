@@ -51,7 +51,9 @@ export class RascalBuilder implements BuilderInterface {
      * @param {BrokerConfig} [initialTopology={}] - Initial topology configuration. Deep cloned to prevent mutations.
      */
     constructor(initialTopology: BrokerConfig = {}) {
-        // Deep clone to prevent mutations to the original
+        // Deep clone at construction so the caller's original config is never mutated.
+        // This is the single defensive copy — middleware receives this clone and returns
+        // modified versions, keeping the pipeline functionally pure from the outside.
         this.topology = structuredClone(initialTopology);
     }
 
@@ -87,6 +89,9 @@ export class RascalBuilder implements BuilderInterface {
 
             // Phase 3: Execute onBrokerCreated callbacks sequentially (fail-fast)
             // If callbacks fail, shut down the broker to avoid leaking connections.
+            // Callbacks run after the broker is live — if one fails, we MUST shut down
+            // the broker to avoid leaking AMQP connections and channels. Fail-fast:
+            // first failure aborts remaining callbacks.
             try {
                 await this.executeCallbacks(broker);
             } catch (callbackError) {
@@ -128,6 +133,9 @@ export class RascalBuilder implements BuilderInterface {
                 // Execute middleware with current topology and context
                 const result = middleware(this.topology, this.context);
 
+                // fast-deep-equal comparison: detect whether the middleware actually changed
+                // the topology, vs just passing it through. Used for execution logging only —
+                // the returned topology is always adopted regardless.
                 const hasModifiedTopology = !isEqual(this.topology, result.topology);
 
                 // Update topology with middleware result

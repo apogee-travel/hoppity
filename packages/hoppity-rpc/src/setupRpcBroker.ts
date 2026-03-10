@@ -26,10 +26,16 @@ export async function setupRpcBroker(
 ): Promise<void> {
     const { serviceName, instanceId, rpcExchange, defaultTimeout = 30_000 } = options;
 
-    // Integrate CorrelationManager for request tracking
+    // The correlation manager is a singleton that tracks pending request promises
+    // keyed by correlationId. It handles timeout rejection and cleanup. Singleton
+    // because multiple calls to setupRpcBroker (if they somehow happened) should
+    // share the same pending-request map — a request made on one broker reference
+    // must be resolvable when the reply arrives on the same connection.
     const correlationManager = createCorrelationManager();
 
-    // Store RPC handlers
+    // Handler registry, keyed by rpcName (e.g., "user-service.getProfile").
+    // Handlers are registered lazily via addRpcListener after broker creation,
+    // so this map starts empty and grows as the consuming code wires up handlers.
     const rpcHandlers = new Map<string, (request: any) => Promise<any>>();
 
     // Generate queue names
@@ -71,6 +77,10 @@ export async function setupRpcBroker(
             const correlationId = request.correlationId;
 
             const handler = rpcHandlers.get(rpcName);
+            // "rpc_reply" uses RabbitMQ's default exchange (exchange: "") with
+            // routingKey set to the requester's reply queue name. The default exchange
+            // is a built-in direct exchange that routes to any queue whose name matches
+            // the routing key — so we don't need an explicit binding for reply routing.
             const responsePublicationName = "rpc_reply";
             if (!handler) {
                 logger.warn("No handler found for RPC method:", rpcName);
@@ -197,10 +207,15 @@ export async function setupRpcBroker(
         return correlationManager.cancelRequest(correlationId);
     };
 
-    // Store the correlationManager on the broker for later use (not public API)
+    // Stash on the broker for integration test access. Not part of the public API —
+    // the double-underscore prefix signals "hands off" to consumers.
     (broker as any).__hoppityRpcCorrelationManager = correlationManager;
 
-    // Cleanup on broker shutdown
+    // Monkey-patch shutdown to drain the correlation manager first.
+    // Without this, pending requests would hang until their individual timeouts
+    // fire — which could be 30+ seconds after the broker is already gone.
+    // By calling cleanup() before the real shutdown, all pending promises reject
+    // immediately with a clear "RPC manager cleanup" error.
     const originalShutdown = broker.shutdown.bind(broker);
     broker.shutdown = async () => {
         correlationManager.cleanup();

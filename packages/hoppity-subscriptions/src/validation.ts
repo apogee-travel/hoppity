@@ -5,17 +5,19 @@ import { SubscriptionHandlers, ValidationResult } from "./types";
  * Extracts subscription names from a broker topology configuration.
  *
  * @param topology - The broker topology configuration
- * @returns Array of subscription names found in the topology
+ * @returns Array of subscription names found across all vhosts
  */
 function extractSubscriptionNames(topology: BrokerConfig): string[] {
     const subscriptionNames: string[] = [];
 
-    // Check if topology has vhosts
     if (topology.vhosts) {
+        // Collect subscription names from every vhost, not just "/".
+        // A single Rascal topology can define multiple vhosts, and a handler
+        // may target a subscription in any of them. Gathering them all into
+        // one flat list lets validation work regardless of vhost layout.
         for (const vhostName in topology.vhosts) {
             const vhost = topology.vhosts[vhostName];
             if (vhost.subscriptions) {
-                // Add subscription names from this vhost
                 subscriptionNames.push(...Object.keys(vhost.subscriptions));
             }
         }
@@ -45,7 +47,11 @@ export function validateSubscriptionHandlers(
     const missingSubscriptions: string[] = [];
     const invalidHandlers: string[] = [];
 
-    // Check for missing subscriptions
+    // Detect handler keys that don't correspond to any subscription in the
+    // topology. This is the primary fail-fast check: a typo in a handler key
+    // (e.g. "order_created" vs "on_order_created") would otherwise result in
+    // dead handler code that silently never fires — the kind of bug that only
+    // surfaces in production when messages pile up unprocessed.
     for (const handlerKey of handlerKeys) {
         if (!availableSubscriptions.includes(handlerKey)) {
             missingSubscriptions.push(handlerKey);

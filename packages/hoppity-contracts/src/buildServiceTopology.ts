@@ -12,6 +12,8 @@ import { getBindingName, getPublicationName, getQueueName, getSubscriptionName }
 
 /**
  * A role declaration accumulated by the TopologyBuilder before materialization.
+ * Using a discriminated union on `role` lets TypeScript narrow the type in the
+ * switch statement, keeping applyDeclaration type-safe without casts.
  */
 type Declaration =
     | { role: "publishesEvent"; contract: EventContract }
@@ -229,9 +231,13 @@ export function buildServiceTopology(
         );
     }
 
+    // Clone upfront so the caller's config is never mutated, matching hoppity core's
+    // defensive-clone convention. The caller gets a fresh topology with declarations baked in.
     const topology = structuredClone(initialTopology);
     const builder = new TopologyBuilderImpl();
 
+    // Two-phase: accumulate declarations during configure(), then materialize all at once.
+    // This lets the builder validate/deduplicate before touching topology.
     configure(builder);
     builder.materialize(topology, serviceName);
 

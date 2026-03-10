@@ -48,8 +48,12 @@ export async function setupDelayedPublishBroker(
     const readyQueueName = `${serviceName}_ready`;
     const waitPublicationName = `${serviceName}_delayed_wait`;
 
-    // Hoppity subscriptions are created programmatically rather than being defined in the
-    // topology. This allows for dynamic subscription setup based on runtime configuration.
+    // The subscription *definition* lives in the topology (added by withDelayedPublish),
+    // but we *activate* it here in the onBrokerCreated callback because the broker
+    // must exist before we can subscribe. The topology defined prefetch: 1 on this
+    // subscription so we process one message at a time — this prevents a burst of
+    // expired messages from overwhelming the re-publish path and competing for
+    // channels/connections under load.
     const readySubscription = await broker.subscribe(`${readyQueueName}_subscription`);
 
     // this is the message handler callback for when messages are received in the ready queue
@@ -74,9 +78,13 @@ export async function setupDelayedPublishBroker(
         logger?.error("Ready subscription error:", err);
     });
 
-    // This is a key Hoppity pattern - extending the broker with new methods.
-    // Unlike Rascal where you'd create separate functions, Hoppity allows
-    // middleware to add capabilities directly to the broker instance.
+    // MONKEY-PATCHING PATTERN: Hoppity middleware extends the broker by assigning
+    // new methods directly onto the BrokerAsPromised instance. This is intentional —
+    // Rascal's broker is a plain object, not a frozen/sealed class, so property
+    // assignment works reliably. The trade-off is that TypeScript doesn't know about
+    // the new method, which is why consumers must cast to DelayedPublishBroker.
+    // The alternative (subclassing BrokerAsPromised) isn't viable because Rascal's
+    // BrokerAsPromised.create() factory returns its own instance, not ours.
     (broker as DelayedPublishBroker).delayedPublish = async function delayedPublish(
         publication: string,
         message: any,

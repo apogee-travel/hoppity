@@ -58,7 +58,11 @@ export const withRpcSupport = (options: RpcMiddlewareOptions): MiddlewareFunctio
             inboundQueueName: generateInboundQueueName(serviceName, instanceId),
         };
 
-        // Clone the topology to avoid mutations
+        // Clone the topology to avoid mutations.
+        // structuredClone is used (rather than spread or Object.assign) because
+        // BrokerConfig is deeply nested — vhosts contain exchanges, queues, bindings,
+        // etc. A shallow copy would share references to inner objects, meaning our
+        // modifications here would bleed into other middleware or the original topology.
         const modifiedTopology = structuredClone(topology);
 
         // Ensure vhosts exist in topology
@@ -70,7 +74,12 @@ export const withRpcSupport = (options: RpcMiddlewareOptions): MiddlewareFunctio
         Object.keys(modifiedTopology.vhosts).forEach(vhostKey => {
             const vhost = modifiedTopology.vhosts![vhostKey];
 
-            // Add RPC exchange
+            // Topic exchange because RPC routing keys use dot-delimited segments
+            // (e.g., "rpc.user-service.getProfile.request") and services bind with
+            // wildcard patterns like "rpc.user-service.#.request". A direct exchange
+            // couldn't support the multi-segment wildcard matching we need here.
+            // Durable so it survives broker restarts — the queues are ephemeral but
+            // the exchange should stick around.
             if (!vhost.exchanges) {
                 vhost.exchanges = {};
             }
@@ -81,7 +90,13 @@ export const withRpcSupport = (options: RpcMiddlewareOptions): MiddlewareFunctio
                 },
             };
 
-            // Add reply queue
+            // Both queues are exclusive + autoDelete:
+            // - exclusive: only this connection can consume from them, preventing
+            //   another instance from accidentally draining our replies or requests.
+            // - autoDelete: RabbitMQ removes them when the connection drops, so we
+            //   don't leak queues when services restart. The trade-off is that any
+            //   in-flight messages are lost on disconnect — acceptable for RPC where
+            //   the requester would timeout anyway.
             if (!vhost.queues) {
                 vhost.queues = {};
             }
@@ -93,7 +108,6 @@ export const withRpcSupport = (options: RpcMiddlewareOptions): MiddlewareFunctio
                 },
             };
 
-            // Add inbound queue
             const inboundQueueName = generateInboundQueueName(serviceName, instanceId);
             (vhost.queues as any)[inboundQueueName] = {
                 options: {
@@ -102,7 +116,10 @@ export const withRpcSupport = (options: RpcMiddlewareOptions): MiddlewareFunctio
                 },
             };
 
-            // Add bindings
+            // Binding pattern uses "#" (multi-word wildcard) so that routing keys
+            // like "rpc.user-service.getProfile.request" match the pattern
+            // "rpc.user-service.#.request". This lets a single service binding
+            // catch all RPC methods targeted at that service.
             if (!vhost.bindings) {
                 vhost.bindings = {};
             }
@@ -113,7 +130,9 @@ export const withRpcSupport = (options: RpcMiddlewareOptions): MiddlewareFunctio
                 bindingKey: generateServiceRpcBindingPattern(serviceName),
             };
 
-            // Add subscriptions
+            // prefetch: 1 on both subscriptions ensures fair dispatch — a service
+            // instance won't hoard messages while another sits idle. This matters
+            // for RPC where response latency is visible to the caller.
             if (!vhost.subscriptions) {
                 vhost.subscriptions = {};
             }

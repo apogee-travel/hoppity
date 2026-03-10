@@ -201,11 +201,29 @@ export interface BuilderInterface {
     build(): Promise<BrokerAsPromised>;
 }
 
-// Utility type for combining broker extensions
+/**
+ * Utility type for combining a Rascal broker with extension methods added by middleware.
+ * Middleware like `hoppity-rpc` and `hoppity-delayed-publish` monkey-patch extra methods
+ * onto the broker in their `onBrokerCreated` callbacks. This type makes those extensions
+ * type-safe by intersecting the base `BrokerAsPromised` with each extension record.
+ *
+ * @typeParam T - Tuple of extension record types (e.g., `[RpcBrokerExtensions, DelayedPublishExtensions]`)
+ *
+ * @example
+ * ```typescript
+ * type MyBroker = BrokerWithExtensions<[{ rpcCall: (msg: any) => Promise<any> }]>;
+ * // Result: BrokerAsPromised & { rpcCall: (msg: any) => Promise<any> }
+ * ```
+ */
 export type BrokerWithExtensions<T extends Record<string, any>[]> = BrokerAsPromised &
     UnionToIntersection<T[number]>;
 
-// Helper type to convert union to intersection
+/**
+ * Converts a union type to an intersection type.
+ * Used internally by {@link BrokerWithExtensions} to merge multiple extension records.
+ * The contravariant trick: wrapping each union member in a function parameter position
+ * forces TypeScript to infer the intersection when resolving the conditional type.
+ */
 type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void
     ? I
     : never;

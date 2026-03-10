@@ -2,11 +2,14 @@ import { BrokerConfig } from "rascal";
 import { Logger, MiddlewareFunction, MiddlewareResult } from "@apogeelabs/hoppity";
 
 /**
- * Options for the withCustomLogger middleware
+ * Configuration options for the {@link withCustomLogger} middleware.
  */
 export interface WithCustomLoggerOptions {
     /**
-     * The custom logger instance to use
+     * The logger instance to inject into the middleware pipeline context.
+     * Must implement all six methods of the {@link Logger} interface.
+     * Most popular loggers (Winston, Pino, Bunyan) need a thin wrapper
+     * since they typically lack `silly` and/or `critical` methods.
      */
     logger: Logger;
 }
@@ -37,10 +40,12 @@ export interface WithCustomLoggerOptions {
  */
 export function withCustomLogger(options: WithCustomLoggerOptions): MiddlewareFunction {
     return (topology: BrokerConfig, context): MiddlewareResult => {
-        // Set the custom logger on the context
+        // Direct assignment (not merged) because the Logger interface IS the full contract —
+        // there's no partial logger concept. You either replace the whole thing or you don't.
         context.logger = options.logger;
 
-        // Return the topology unchanged
+        // Topology passes through untouched — this middleware is purely a context mutation.
+        // No onBrokerCreated callback needed since there's no broker-level setup to perform.
         return { topology };
     };
 }
