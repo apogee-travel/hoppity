@@ -5,6 +5,8 @@ Logger utilities for hoppity - a RabbitMQ/Rascal broker builder.
 ## Installation
 
 ```bash
+pnpm add @apogeelabs/hoppity-logger
+# or
 npm install @apogeelabs/hoppity-logger
 ```
 
@@ -140,7 +142,7 @@ interface Logger {
 
 ## Middleware Order
 
-The `withCustomLogger` middleware should typically be applied early in the middleware chain so that downstream middleware can use the custom logger:
+⚠️ The `withCustomLogger` middleware **must be the first middleware** in the chain. Any middleware registered before it will use the default `ConsoleLogger` instead of your custom logger:
 
 ```typescript
 const broker = await hoppity

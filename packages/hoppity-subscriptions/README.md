@@ -9,7 +9,7 @@ This plugin provides middleware for setting up subscription handlers in a hoppit
 ## Features
 
 - ✅ **Topology Validation**: Validates that handler keys match subscriptions in the topology
-- ✅ **Handler Validation**: Ensures all handlers are functions and checks for duplicates
+- ✅ **Handler Validation**: Ensures all handler values are functions
 - ✅ **Fail-Fast Pipeline**: Throws errors for missing/invalid subscriptions to prevent dead code
 - ✅ **Automatic Setup**: Wires up message, error, and invalid_content event listeners
 - ✅ **Async Support**: Handles both synchronous and asynchronous handler functions
@@ -83,14 +83,12 @@ type SubscriptionHandler = (
 The middleware validates:
 
 1. **Subscription Existence**: All handler keys must match subscription names in the topology
-2. **Handler Functions**: All handlers must be functions
-3. **No Duplicates**: No duplicate handler keys allowed
+2. **Handler Functions**: All handler values must be functions
 
 If validation fails, the pipeline fails with a descriptive error message including:
 
-- Missing subscription names
-- Invalid handlers
-- Duplicate keys
+- Missing subscription names (handler keys with no matching topology subscription)
+- Invalid handlers (values that are not functions)
 - Available subscription names for reference
 
 ### Error Handling
@@ -159,20 +157,30 @@ interface ValidationResult {
     missingSubscriptions: string[];
     availableSubscriptions: string[];
     invalidHandlers: string[];
-    duplicateHandlers: string[];
     errorMessage?: string;
 }
 ```
 
+## Middleware Ordering
+
+`withSubscriptions` should be the **last** middleware in the pipeline. It validates handler keys against the finalized topology, so any middleware that adds or modifies subscriptions (e.g. `hoppity-rpc`, `hoppity-delayed-publish`) must run first. If `withSubscriptions` runs before the topology is complete, valid handler keys will fail validation because their subscriptions don't exist yet.
+
+```typescript
+const broker = await hoppity
+    .withTopology(topology)
+    .use(withCustomLogger(myLogger)) // first — so all middleware uses the custom logger
+    .use(withRpc(rpcConfig)) // adds RPC subscriptions to topology
+    .use(withSubscriptions(handlers)) // last — validates against the complete topology
+    .build();
+```
+
 ## Integration with Hoppity
 
-This plugin integrates seamlessly with the hoppity middleware pipeline:
+This middleware uses a two-phase design that maps to hoppity's pipeline lifecycle:
 
-1. **Topology Phase**: Validates subscriptions and handlers
-2. **Broker Creation**: Creates broker with validated topology
-3. **Callback Phase**: Sets up subscription listeners and handlers
-
-The middleware follows hoppity's fail-fast pattern and provides comprehensive logging throughout the process.
+1. **Topology Phase** (synchronous): Validates that every handler key matches a subscription in the topology. Fails fast with a descriptive error if anything is wrong.
+2. **Broker Creation**: The core pipeline creates the broker with the finalized topology. This middleware does not modify the topology.
+3. **Callback Phase** (`onBrokerCreated`, async): Calls `broker.subscribe()` for each handler, then attaches `message`, `error`, and `invalid_content` event listeners. If any subscription fails to wire up, the error propagates to the core pipeline which shuts down the broker before re-throwing.
 
 ## Development
 

@@ -15,6 +15,8 @@ A middleware pipeline for Rascal broker configuration that enables modular, comp
 ## Installation
 
 ```bash
+pnpm add @apogeelabs/hoppity
+# or
 npm install @apogeelabs/hoppity
 ```
 

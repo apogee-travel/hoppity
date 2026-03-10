@@ -1,4 +1,4 @@
-# Hoppity RPC 🚨
+# Hoppity RPC
 
 RPC utilities for hoppity - enables service-to-service communication over RabbitMQ using request/response patterns with full type safety.
 
@@ -16,6 +16,8 @@ RPC utilities for hoppity - enables service-to-service communication over Rabbit
 ## Installation
 
 ```bash
+pnpm add @apogeelabs/hoppity-rpc
+# or
 npm install @apogeelabs/hoppity-rpc
 ```
 
@@ -34,7 +36,6 @@ const broker = await hoppity
         withRpcSupport({
             serviceName: "hotel-service",
             instanceId: "instance-123",
-            rpcExchange: "rpc_exchange",
         })
     )
     .build();
@@ -63,8 +64,8 @@ const broker = await hoppity
         withRpcSupport({
             serviceName: "hotel-service",
             instanceId: crypto.randomUUID(), // Unique per instance
-            rpcExchange: "rpc_exchange",
-            defaultTimeout: 30000, // 30 seconds
+            rpcExchange: "my_custom_exchange", // Override the default "rpc_requests"
+            defaultTimeout: 15000, // 15 seconds (default is 30000)
         })
     )
     .build();
@@ -78,12 +79,12 @@ Creates a hoppity middleware that adds RPC capabilities to your broker.
 
 #### Options
 
-| Option           | Type     | Required | Default | Description                                                  |
-| ---------------- | -------- | -------- | ------- | ------------------------------------------------------------ |
-| `serviceName`    | `string` | ✅       | -       | The name of your service (used for queue naming and routing) |
-| `instanceId`     | `string` | ✅       | -       | Unique identifier for this service instance                  |
-| `rpcExchange`    | `string` | ✅       | -       | The RabbitMQ exchange name for RPC routing                   |
-| `defaultTimeout` | `number` | ❌       | `30000` | Default timeout for RPC requests in milliseconds             |
+| Option           | Type     | Required | Default          | Description                                                  |
+| ---------------- | -------- | -------- | ---------------- | ------------------------------------------------------------ |
+| `serviceName`    | `string` | Yes      | -                | The name of your service (used for queue naming and routing) |
+| `instanceId`     | `string` | Yes      | -                | Unique identifier for this service instance                  |
+| `rpcExchange`    | `string` | No       | `"rpc_requests"` | The RabbitMQ exchange name for RPC routing                   |
+| `defaultTimeout` | `number` | No       | `30000`          | Default timeout for RPC requests in milliseconds             |
 
 ### `broker.request<TRequest, TResponse>(rpcName, message, overrides?)`
 
@@ -221,7 +222,7 @@ const broker = await hoppity
         withRpcSupport({
             serviceName: "hotel-service",
             instanceId: "instance-123",
-            rpcExchange: "rpc_exchange",
+            // rpcExchange defaults to "rpc_requests" if omitted
         })
     )
     .build();
@@ -238,7 +239,7 @@ const resultingTopology = {
             },
             // Added by RPC middleware:
             exchanges: {
-                rpc_exchange: {
+                rpc_requests: {
                     type: "topic",
                     options: {
                         durable: true,
@@ -261,7 +262,7 @@ const resultingTopology = {
             },
             bindings: {
                 rpc_hotel_service_instance_123_inbound_binding: {
-                    source: "rpc_exchange",
+                    source: "rpc_requests",
                     destination: "rpc_hotel_service_instance_123_inbound",
                     destinationType: "queue",
                     bindingKey: "rpc.hotel-service.#.request",
@@ -283,7 +284,7 @@ const resultingTopology = {
             },
             publications: {
                 rpc_request: {
-                    exchange: "rpc_exchange",
+                    exchange: "rpc_requests",
                 },
                 rpc_reply: {
                     exchange: "", // Default direct exchange
@@ -394,7 +395,6 @@ const broker = await hoppity
         withRpcSupport({
             serviceName: "api-gateway",
             instanceId: crypto.randomUUID(),
-            rpcExchange: "rpc_exchange",
         })
     )
     .build();
@@ -416,7 +416,6 @@ const broker = await hoppity
         withRpcSupport({
             serviceName: "user-service",
             instanceId: crypto.randomUUID(),
-            rpcExchange: "rpc_exchange",
         })
     )
     .build();

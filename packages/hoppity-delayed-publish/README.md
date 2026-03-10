@@ -1,199 +1,193 @@
-# Hoppity Delayed Publish 🕐
+# Hoppity Delayed Publish
 
-A hoppity extension that provides delayed publish functionality for RabbitMQ messaging using TTL (Time-To-Live) and dead letter exchanges.
+TTL-based delayed message publishing for [hoppity](https://github.com/apogee-stealth/hoppity) brokers, using RabbitMQ dead-letter exchanges with automatic retry on re-publish failure.
 
 ## Features
 
-- **Delayed Publishing**: Schedule messages to be published at a future time using RabbitMQ TTL
-- **Automatic Retry Logic**: Built-in retry mechanism for failed re-publishes with configurable max retries
-- **Error Handling**: Dedicated error queue for messages that exceed retry limits
-- **Hoppity Integration**: Seamlessly integrates with the hoppity middleware pipeline
-- **Type Safety**: Full TypeScript support with proper type definitions
-- **Service Isolation**: Queue naming based on service name and instance ID to prevent conflicts
+- **Delayed Publishing**: Schedule messages to be published at a future time using RabbitMQ per-message TTL
+- **Automatic Retry**: Built-in retry mechanism for failed re-publishes (configurable attempts and backoff)
+- **Error Routing**: Dedicated error queue for messages that exhaust retry limits
+- **Hoppity Integration**: Plugs into the hoppity middleware pipeline — topology and subscriptions are set up automatically
+- **Type Safety**: Full TypeScript support; cast to `DelayedPublishBroker` for the extended API
+- **Service Isolation**: Queue naming based on `serviceName` prevents cross-service conflicts
 
 ## Installation
 
 ```bash
+pnpm add @apogeelabs/hoppity-delayed-publish
+# or
 npm install @apogeelabs/hoppity-delayed-publish
 ```
+
+Peer dependency: `rascal@^20.1.1`
 
 ## Usage
 
 ```typescript
 import hoppity from "@apogeelabs/hoppity";
-import { withDelayedPublish } from "@apogeelabs/hoppity-delayed-publish";
+import { withDelayedPublish, type DelayedPublishBroker } from "@apogeelabs/hoppity-delayed-publish";
 import { randomUUID } from "crypto";
 
-// Create broker with delayed publish support
-const broker = await hoppity
+// build() returns BrokerAsPromised — cast to DelayedPublishBroker
+// to access the delayedPublish() method added by the middleware.
+const broker = (await hoppity
     .withTopology(baseTopology)
     .use(
         withDelayedPublish({
             serviceName: "my-service",
             instanceId: randomUUID(),
-            defaultDelay: 30000, // 30 seconds
+            defaultDelay: 30_000, // 30 seconds
         })
     )
-    .build();
+    .build()) as DelayedPublishBroker;
 
-// Publish a message with a delay
+// Publish with an explicit 5-second delay
 await broker.delayedPublish(
-    "my-exchange-publication",
+    "my-exchange-publication", // must exist in your topology
     { message: "This will be published in 5 seconds" },
     undefined, // optional publication overrides
-    5000 // 5 seconds delay
+    5_000
 );
+
+// Publish with the default delay (30s, from options above)
+await broker.delayedPublish("my-exchange-publication", { message: "Delayed with default" });
 ```
 
 ## API Reference
 
 ### `withDelayedPublish(options)`
 
-Middleware function that adds delayed publish capabilities to your hoppity broker.
+Middleware factory that adds delayed publish infrastructure to every vhost in your topology and extends the broker with the `delayedPublish()` method.
 
-#### Options
+#### Options (`DelayedPublishOptions`)
 
-- `serviceName` (required): The name of the service (used for queue naming)
-- `instanceId` (required): Unique instance identifier (used for queue naming)
-- `defaultDelay` (optional): Default delay in milliseconds when no delay is specified (default: 30000)
-- `maxRetries` (optional): Max retry attempts when re-publish fails (default: 5)
-- `retryDelay` (optional): Delay in ms between retry attempts (default: 1000)
-- `durable` (optional): Whether queues and messages survive broker restarts (default: true)
+| Option         | Type      | Default  | Description                                                                      |
+| -------------- | --------- | -------- | -------------------------------------------------------------------------------- |
+| `serviceName`  | `string`  | required | Service name — used as prefix for queue/publication names                        |
+| `instanceId`   | `string`  | required | Unique instance identifier (typically `randomUUID()`)                            |
+| `defaultDelay` | `number`  | `30_000` | Default delay in ms when `delayedPublish()` is called without a `delay` argument |
+| `maxRetries`   | `number`  | `5`      | Max re-publish retry attempts before routing to the error queue                  |
+| `retryDelay`   | `number`  | `1_000`  | Delay in ms between retry attempts                                               |
+| `durable`      | `boolean` | `true`   | Controls queue durability and message persistence                                |
 
 ### `broker.delayedPublish(publication, message, overrides?, delay?)`
 
-Publishes a message with a delay before it gets re-published to the original destination.
+Publishes a message that will be re-published to its original destination after the specified delay.
 
-#### Parameters
+| Parameter     | Type                 | Description                                      |
+| ------------- | -------------------- | ------------------------------------------------ |
+| `publication` | `string`             | Name of an existing publication in your topology |
+| `message`     | `any`                | The message payload                              |
+| `overrides`   | `PublicationConfig?` | Optional Rascal publication overrides            |
+| `delay`       | `number?`            | Delay in ms (uses `defaultDelay` if omitted)     |
 
-- `publication` (string): The original publication name to use when re-publishing
-- `message` (any): The message to publish
-- `overrides` (optional): Publication configuration overrides
-- `delay` (optional): Delay in milliseconds (uses defaultDelay if not specified)
-
-#### Returns
-
-Promise that resolves when the message is published to the wait queue.
+Returns a `Promise<void>` that resolves when the message is accepted by the wait queue (not when it is eventually re-published).
 
 ## How It Works
 
-The delayed publish functionality uses RabbitMQ's TTL (Time-To-Live) feature with dead letter exchanges:
+Uses the **RabbitMQ TTL + Dead Letter Exchange** pattern:
 
-1. **Wait Queue**: Messages are initially published to a wait queue with TTL set to the desired delay
-2. **Dead Letter Exchange**: When messages expire, they are automatically moved to a ready queue
-3. **Ready Queue**: A subscription processes expired messages and re-publishes them to their original destination
-4. **Error Handling**: Failed re-publishes are retried up to 5 times, then sent to an error queue
+1. **`delayedPublish()`** wraps the message in a `DelayedMessage` envelope (original payload + routing metadata + timestamp) and publishes it to the **wait queue** with the per-message TTL set to the desired delay.
+
+2. **Wait queue** (`{serviceName}_wait`) holds the message until its TTL expires. On expiry, RabbitMQ dead-letters it to the **ready queue** via the default direct exchange (`""`).
+
+3. **Ready queue** (`{serviceName}_ready`) has a subscription (prefetch 1) that unwraps the envelope and re-publishes the original message to the original publication with `mandatory: true`.
+
+4. **Retry on failure**: If re-publishing fails, the message goes back to the wait queue with a short TTL (`retryDelay`), reusing the same dead-letter cycle. This avoids tight retry loops and gives the broker breathing room. After `maxRetries` attempts, the message is routed to the error queue.
+
+5. **Error queue** (`{serviceName}_delayed_errors`) collects messages that exhausted all retries, for inspection or manual replay.
 
 ### Topology Changes
 
-The middleware automatically adds the following infrastructure to your topology:
+The middleware automatically adds the following to each vhost:
+
+```
+Queues:
+  {serviceName}_wait            - TTL hold queue with dead-letter to ready queue
+  {serviceName}_ready           - Receives expired messages for re-publishing
+  {serviceName}_delayed_errors  - Failed messages after max retries
+
+Publications:
+  {serviceName}_delayed_wait    - Publishes to the wait queue via default exchange
+
+Subscriptions:
+  {serviceName}_ready_subscription - Processes the ready queue (prefetch: 1)
+```
+
+Example topology after applying `withDelayedPublish({ serviceName: "my-service", ... })`:
 
 ```typescript
-// Base topology (minimal example)
-const baseTopology = {
+{
     vhosts: {
         "/": {
-            connection: {
-                hostname: "localhost",
-                port: 5672,
-                user: "guest",
-                password: "guest",
-            },
-        },
-    },
-};
-
-// After applying withDelayedPublish({ serviceName: "my-service", instanceId: "instance-1" })
-// The topology becomes:
-const modifiedTopology = {
-    vhosts: {
-        "/": {
-            connection: {
-                hostname: "localhost",
-                port: 5672,
-                user: "guest",
-                password: "guest",
-            },
+            connection: { /* ... */ },
             queues: {
                 "my-service_wait": {
                     options: {
                         durable: true,
                         autoDelete: false,
                         arguments: {
-                            "x-dead-letter-exchange": "", // Default direct exchange
+                            "x-dead-letter-exchange": "",
                             "x-dead-letter-routing-key": "my-service_ready",
                         },
                     },
                 },
                 "my-service_ready": {
-                    options: {
-                        durable: true,
-                        autoDelete: false,
-                    },
+                    options: { durable: true, autoDelete: false },
                 },
                 "my-service_delayed_errors": {
-                    options: {
-                        durable: true,
-                        autoDelete: false,
-                    },
+                    options: { durable: true, autoDelete: false },
                 },
             },
             publications: {
                 "my-service_delayed_wait": {
-                    exchange: "", // Default direct exchange
+                    exchange: "",
                     routingKey: "my-service_wait",
-                    options: {
-                        persistent: true,
-                    },
+                    options: { persistent: true },
                 },
             },
             subscriptions: {
                 "my-service_ready_subscription": {
                     queue: "my-service_ready",
-                    options: {
-                        prefetch: 1,
-                    },
+                    options: { prefetch: 1 },
                 },
             },
         },
     },
-};
+}
 ```
-
-**Queue Descriptions:**
-
-- **`{serviceName}_wait`**: Temporary queue where delayed messages are stored with TTL
-- **`{serviceName}_ready`**: Queue that receives expired messages from the wait queue
-- **`{serviceName}_delayed_errors`**: Queue for messages that exceed retry limits
-
-**Publications:**
-
-- **`{serviceName}_delayed_wait`**: Publication for sending messages to the wait queue
-
-**Subscriptions:**
-
-- **`{serviceName}_ready_subscription`**: Subscription that processes expired messages and re-publishes them
 
 ## Error Handling
 
-The package provides structured error handling with specific error codes:
+All errors are instances of `DelayedPublishError` with a machine-readable `code`:
 
-- `QUEUE_FULL`: Wait queue is full
-- `REPUBLISH_FAILED`: Failed to re-publish message
-- `MAX_RETRIES_EXCEEDED`: Maximum retry attempts exceeded
-- `INVALID_DELAY`: Invalid delay value (must be > 0)
+| Code                   | When                                                 |
+| ---------------------- | ---------------------------------------------------- |
+| `QUEUE_FULL`           | Publishing to the wait queue fails                   |
+| `REPUBLISH_FAILED`     | Re-publishing from the ready queue fails (retryable) |
+| `MAX_RETRIES_EXCEEDED` | All retry attempts exhausted                         |
+| `INVALID_DELAY`        | Delay value is zero or negative                      |
+
+```typescript
+import { DelayedPublishError, DelayedPublishErrorCode } from "@apogeelabs/hoppity-delayed-publish";
+
+try {
+    await broker.delayedPublish("pub", msg, undefined, -1);
+} catch (err) {
+    if (err instanceof DelayedPublishError) {
+        console.error(err.code, err.details);
+    }
+}
+```
 
 ## Examples
 
-See the `examples/delayed-publish/` directory for complete working examples demonstrating delayed publish functionality.
+See the `examples/delayed-publish/` directory for complete working examples.
 
 ## Dependencies
 
-This package depends on:
-
-- `@apogeelabs/hoppity` - The core hoppity library
-- `rascal` - The underlying RabbitMQ library
-- `structuredClone` (built-in) - For deep cloning
+- `@apogeelabs/hoppity` (workspace dependency) — core middleware pipeline
+- `rascal@^20.1.1` (peer dependency) — RabbitMQ broker library
 
 ## License
 

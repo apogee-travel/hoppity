@@ -7,6 +7,8 @@ Define your messaging contracts with Zod schemas, then let `hoppity-contracts` d
 ## Installation
 
 ```bash
+pnpm add @apogeelabs/hoppity-contracts
+# or
 npm install @apogeelabs/hoppity-contracts
 ```
 
@@ -47,13 +49,13 @@ const DonatedInventory = defineDomain("donated_inventory", {
 
 Each contract carries derived RabbitMQ metadata:
 
-| Contract                                | Exchange                | Routing Key                              |
-| --------------------------------------- | ----------------------- | ---------------------------------------- |
-| `DonatedInventory.events.created`       | `donated_inventory`     | `donated_inventory.event.created`        |
-| `DonatedInventory.commands.reserveItem` | `donated_inventory`     | `donated_inventory.command.reserve_item` |
-| `DonatedInventory.rpc.getQuote`         | `donated_inventory_rpc` | `donated_inventory.rpc.get_quote`        |
+| Contract                                | Exchange                | Routing Key                              | Publication / Subscription Name          |
+| --------------------------------------- | ----------------------- | ---------------------------------------- | ---------------------------------------- |
+| `DonatedInventory.events.created`       | `donated_inventory`     | `donated_inventory.event.created`        | `donated_inventory_event_created`        |
+| `DonatedInventory.commands.reserveItem` | `donated_inventory`     | `donated_inventory.command.reserve_item` | `donated_inventory_command_reserve_item` |
+| `DonatedInventory.rpc.getQuote`         | `donated_inventory_rpc` | `donated_inventory.rpc.get_quote`        | `donated_inventory_rpc_get_quote`        |
 
-Events and commands share a domain exchange. RPCs get their own `{domain}_rpc` exchange. CamelCase operation names are converted to snake_case in routing keys.
+Events and commands share a domain exchange. RPCs get their own `{domain}_rpc` exchange. CamelCase operation names are converted to snake*case in routing keys. Each contract also includes `publicationName` and `subscriptionName` properties (both follow the `{domain}*{opType}\_{snake_name}`pattern) — these are the names used with`broker.publish()` and when attaching subscription handlers, respectively.
 
 ### Building Service Topology
 
@@ -144,16 +146,16 @@ The outbound exchange name is stored in `context.data.outboundExchange` for down
 
 ### Types
 
-| Type                    | Description                                                             |
-| ----------------------- | ----------------------------------------------------------------------- |
-| `EventContract`         | Contract for a domain event (something that happened)                   |
-| `CommandContract`       | Contract for a domain command (an instruction to do something)          |
-| `RpcContract`           | Contract for a request/response operation                               |
-| `DomainDefinition`      | Return type of `defineDomain` — groups contracts by operation type      |
-| `DomainDefinitionInput` | Input shape for `defineDomain`                                          |
-| `TopologyBuilder`       | Builder interface inside the `buildServiceTopology` callback            |
-| `HandlerOptions`        | Queue/redelivery/dead-letter configuration for subscribers and handlers |
-| `SubscriptionOptions`   | Alias for `HandlerOptions`                                              |
+| Type                    | Description                                                                                                                                               |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EventContract`         | Contract for a domain event. Properties: `schema`, `exchange`, `routingKey`, `publicationName`, `subscriptionName`                                        |
+| `CommandContract`       | Contract for a domain command. Properties: `schema`, `exchange`, `routingKey`, `publicationName`, `subscriptionName`                                      |
+| `RpcContract`           | Contract for a request/response operation. Properties: `requestSchema`, `responseSchema`, `exchange`, `routingKey`, `publicationName`, `subscriptionName` |
+| `DomainDefinition`      | Return type of `defineDomain` — groups contracts by operation type                                                                                        |
+| `DomainDefinitionInput` | Input shape for `defineDomain`                                                                                                                            |
+| `TopologyBuilder`       | Builder interface inside the `buildServiceTopology` callback                                                                                              |
+| `HandlerOptions`        | Queue/redelivery/dead-letter configuration for subscribers and handlers                                                                                   |
+| `SubscriptionOptions`   | Alias for `HandlerOptions`                                                                                                                                |
 
 ## Dependencies
 
