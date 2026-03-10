@@ -9,7 +9,7 @@ import {
     RpcContract,
     RpcDefinition,
 } from "./types";
-import { getExchangeName, getRoutingKey } from "./naming";
+import { getExchangeName, getPublicationName, getRoutingKey, getSubscriptionName } from "./naming";
 
 /**
  * Defines a domain and returns typed contract objects for all its operations.
@@ -64,6 +64,8 @@ function buildEventContracts<TDomain extends string, TEvents extends EventsDefin
             schema,
             exchange,
             routingKey: getRoutingKey(domain, "event", name),
+            publicationName: getPublicationName(domain, "event", name),
+            subscriptionName: getSubscriptionName(domain, "event", name),
         };
     }
 
@@ -86,6 +88,8 @@ function buildCommandContracts<TDomain extends string, TCommands extends Command
             schema,
             exchange,
             routingKey: getRoutingKey(domain, "command", name),
+            publicationName: getPublicationName(domain, "command", name),
+            subscriptionName: getSubscriptionName(domain, "command", name),
         };
     }
 
@@ -113,6 +117,8 @@ function buildRpcContracts<TDomain extends string, TRpc extends RpcDefinition>(
             responseSchema,
             exchange,
             routingKey: getRoutingKey(domain, "rpc", name),
+            publicationName: getPublicationName(domain, "rpc", name),
+            subscriptionName: getSubscriptionName(domain, "rpc", name),
         };
     }
 

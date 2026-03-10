@@ -54,6 +54,18 @@ describe("hoppity-contracts > src > defineDomain", () => {
                 expect(result.events.created.routingKey).toBe("donated_inventory.event.created");
             });
 
+            it("should derive the correct publicationName for the event", () => {
+                expect(result.events.created.publicationName).toBe(
+                    "donated_inventory_event_created"
+                );
+            });
+
+            it("should derive the correct subscriptionName for the event", () => {
+                expect(result.events.created.subscriptionName).toBe(
+                    "donated_inventory_event_created"
+                );
+            });
+
             it("should preserve the event schema on the contract", () => {
                 expect(result.events.created.schema).toBe(itemSchema);
             });
@@ -80,6 +92,18 @@ describe("hoppity-contracts > src > defineDomain", () => {
                 );
             });
 
+            it("should derive the correct publicationName for the command", () => {
+                expect(result.commands.reserveItem.publicationName).toBe(
+                    "donated_inventory_command_reserve_item"
+                );
+            });
+
+            it("should derive the correct subscriptionName for the command", () => {
+                expect(result.commands.reserveItem.subscriptionName).toBe(
+                    "donated_inventory_command_reserve_item"
+                );
+            });
+
             it("should preserve the command schema on the contract", () => {
                 expect(result.commands.reserveItem.schema).toBe(reserveSchema);
             });
@@ -102,6 +126,16 @@ describe("hoppity-contracts > src > defineDomain", () => {
 
             it("should derive the correct routing key for the rpc operation", () => {
                 expect(result.rpc.getQuote.routingKey).toBe("donated_inventory.rpc.get_quote");
+            });
+
+            it("should derive the correct publicationName for the rpc operation", () => {
+                expect(result.rpc.getQuote.publicationName).toBe("donated_inventory_rpc_get_quote");
+            });
+
+            it("should derive the correct subscriptionName for the rpc operation", () => {
+                expect(result.rpc.getQuote.subscriptionName).toBe(
+                    "donated_inventory_rpc_get_quote"
+                );
             });
 
             it("should preserve the request schema on the rpc contract", () => {

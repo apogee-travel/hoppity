@@ -21,6 +21,10 @@ export interface EventContract<
     exchange: string;
     /** The topic routing key: {domain}.event.{snake_name} */
     routingKey: string;
+    /** The rascal publication name: {domain}_event_{snake_name} */
+    publicationName: string;
+    /** The rascal subscription name: {domain}_event_{snake_name} */
+    subscriptionName: string;
 }
 
 /**
@@ -42,6 +46,10 @@ export interface CommandContract<
     exchange: string;
     /** The topic routing key: {domain}.command.{snake_name} */
     routingKey: string;
+    /** The rascal publication name: {domain}_command_{snake_name} */
+    publicationName: string;
+    /** The rascal subscription name: {domain}_command_{snake_name} */
+    subscriptionName: string;
 }
 
 /**
@@ -65,6 +73,10 @@ export interface RpcContract<
     exchange: string;
     /** The topic routing key: {domain}.rpc.{snake_name} */
     routingKey: string;
+    /** The rascal publication name: {domain}_rpc_{snake_name} */
+    publicationName: string;
+    /** The rascal subscription name: {domain}_rpc_{snake_name} */
+    subscriptionName: string;
 }
 
 /**
