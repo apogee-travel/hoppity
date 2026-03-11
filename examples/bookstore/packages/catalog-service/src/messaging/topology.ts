@@ -1,6 +1,6 @@
 import { buildServiceTopology } from "@apogeelabs/hoppity-contracts";
 import { BrokerConfig } from "rascal";
-import { Orders, Catalog } from "@bookstore/contracts";
+import { OrdersDomain, CatalogDomain } from "@bookstore/contracts";
 import { config } from "../config";
 
 const baseTopology: BrokerConfig = {
@@ -16,7 +16,7 @@ const baseTopology: BrokerConfig = {
 };
 
 export const topology = buildServiceTopology(baseTopology, "catalog-service", t => {
-    t.subscribesToEvent(Orders.events.orderCreated);
-    t.subscribesToEvent(Orders.events.orderCancelled);
-    t.respondsToRpc(Catalog.rpc.getStockLevels);
+    t.subscribesToEvent(OrdersDomain.events.orderCreated);
+    t.subscribesToEvent(OrdersDomain.events.orderCancelled);
+    t.respondsToRpc(CatalogDomain.rpc.getStockLevels);
 });

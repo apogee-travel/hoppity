@@ -1,3 +1,5 @@
+import type { Order, OrderItem } from "@bookstore/contracts";
+
 /**
  * Hardcoded product catalog. Order-service owns the product data — catalog-service
  * only tracks stock quantities. This avoids cross-service RPCs during order creation.
@@ -6,21 +8,6 @@ const PRODUCTS: Record<string, { productId: string; productName: string; unitPri
     "widget-1": { productId: "widget-1", productName: "Widget", unitPrice: 9.99 },
     "gadget-1": { productId: "gadget-1", productName: "Gadget", unitPrice: 17.99 },
 };
-
-export interface ResolvedOrderItem {
-    productId: string;
-    productName: string;
-    quantity: number;
-    unitPrice: number;
-    lineTotal: number;
-}
-
-export interface Order {
-    orderId: string;
-    items: ResolvedOrderItem[];
-    total: number;
-    status: "active" | "cancelled";
-}
 
 let orderCounter = 0;
 
@@ -44,7 +31,7 @@ export function createOrder(requestedItems: Array<{ productId: string; quantity:
     orderCounter++;
     const orderId = `ORD-${String(orderCounter).padStart(3, "0")}`;
 
-    const resolvedItems: ResolvedOrderItem[] = requestedItems.map(item => {
+    const resolvedItems: OrderItem[] = requestedItems.map(item => {
         const product = lookupProduct(item.productId);
         if (!product) {
             throw new Error(`Unknown product: ${item.productId}`);

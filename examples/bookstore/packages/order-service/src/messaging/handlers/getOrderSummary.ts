@@ -1,5 +1,5 @@
 import { onRpc } from "@apogeelabs/hoppity-operations";
-import { Orders } from "@bookstore/contracts";
+import { OrdersDomain } from "@bookstore/contracts";
 import { getOrder } from "../../store";
 
 /**
@@ -8,7 +8,7 @@ import { getOrder } from "../../store";
  * rather than a silent null.
  */
 export const getOrderSummaryHandler = onRpc(
-    Orders.rpc.getOrderSummary,
+    OrdersDomain.rpc.getOrderSummary,
     async (request, _context) => {
         const order = getOrder(request.orderId);
         if (!order) {

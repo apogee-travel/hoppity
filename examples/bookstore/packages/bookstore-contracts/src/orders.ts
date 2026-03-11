@@ -30,6 +30,9 @@ const orderResponseSchema = z.object({
     status: z.enum(["active", "cancelled"]),
 });
 
+export type Order = z.infer<typeof orderResponseSchema>;
+export type OrderItem = z.infer<typeof resolvedOrderItemSchema>;
+
 /**
  * Orders domain — events, commands, and RPCs for the order lifecycle.
  *
@@ -39,7 +42,7 @@ const orderResponseSchema = z.object({
  * orderCreated and orderCancelled are events because they're broadcasts of facts
  * that happened — other services react independently.
  */
-export const Orders = defineDomain("orders", {
+export const OrdersDomain = defineDomain("orders", {
     events: {
         // orderCancelled includes items so catalog-service can restore stock
         // without maintaining its own order-to-items mapping.

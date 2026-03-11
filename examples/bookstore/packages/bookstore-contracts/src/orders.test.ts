@@ -2,15 +2,15 @@
 
 export default {};
 
-import { Orders } from "./orders";
+import { OrdersDomain } from "./orders";
 
 describe("bookstore-contracts > orders", () => {
-    describe("Orders.events.orderCreated schema", () => {
+    describe("OrdersDomain.events.orderCreated schema", () => {
         describe("when payload is valid", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.events.orderCreated.schema.safeParse({
+                result = OrdersDomain.events.orderCreated.schema.safeParse({
                     orderId: "ORD-001",
                     items: [
                         {
@@ -50,7 +50,7 @@ describe("bookstore-contracts > orders", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.events.orderCreated.schema.safeParse({
+                result = OrdersDomain.events.orderCreated.schema.safeParse({
                     items: [],
                     total: 0,
                 });
@@ -65,7 +65,7 @@ describe("bookstore-contracts > orders", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.events.orderCreated.schema.safeParse({
+                result = OrdersDomain.events.orderCreated.schema.safeParse({
                     orderId: "ORD-001",
                     items: [
                         {
@@ -89,7 +89,7 @@ describe("bookstore-contracts > orders", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.events.orderCreated.schema.safeParse({
+                result = OrdersDomain.events.orderCreated.schema.safeParse({
                     orderId: "ORD-001",
                     items: [
                         {
@@ -110,12 +110,12 @@ describe("bookstore-contracts > orders", () => {
         });
     });
 
-    describe("Orders.events.orderCancelled schema", () => {
+    describe("OrdersDomain.events.orderCancelled schema", () => {
         describe("when payload is valid", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.events.orderCancelled.schema.safeParse({
+                result = OrdersDomain.events.orderCancelled.schema.safeParse({
                     orderId: "ORD-002",
                     items: [
                         {
@@ -138,7 +138,7 @@ describe("bookstore-contracts > orders", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.events.orderCancelled.schema.safeParse({
+                result = OrdersDomain.events.orderCancelled.schema.safeParse({
                     orderId: "ORD-002",
                 });
             });
@@ -149,12 +149,12 @@ describe("bookstore-contracts > orders", () => {
         });
     });
 
-    describe("Orders.commands.cancelOrder schema", () => {
+    describe("OrdersDomain.commands.cancelOrder schema", () => {
         describe("when payload is valid", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.commands.cancelOrder.schema.safeParse({
+                result = OrdersDomain.commands.cancelOrder.schema.safeParse({
                     orderId: "ORD-003",
                 });
             });
@@ -168,7 +168,7 @@ describe("bookstore-contracts > orders", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.commands.cancelOrder.schema.safeParse({});
+                result = OrdersDomain.commands.cancelOrder.schema.safeParse({});
             });
 
             it("should fail validation", () => {
@@ -177,12 +177,12 @@ describe("bookstore-contracts > orders", () => {
         });
     });
 
-    describe("Orders.rpc.createOrder request schema", () => {
+    describe("OrdersDomain.rpc.createOrder request schema", () => {
         describe("when request is valid", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.rpc.createOrder.requestSchema.safeParse({
+                result = OrdersDomain.rpc.createOrder.requestSchema.safeParse({
                     items: [{ productId: "widget-1", quantity: 3 }],
                 });
             });
@@ -196,7 +196,7 @@ describe("bookstore-contracts > orders", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.rpc.createOrder.requestSchema.safeParse({
+                result = OrdersDomain.rpc.createOrder.requestSchema.safeParse({
                     items: [],
                 });
             });
@@ -210,7 +210,7 @@ describe("bookstore-contracts > orders", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.rpc.createOrder.requestSchema.safeParse({
+                result = OrdersDomain.rpc.createOrder.requestSchema.safeParse({
                     items: [{ productId: "widget-1", quantity: -1 }],
                 });
             });
@@ -224,7 +224,7 @@ describe("bookstore-contracts > orders", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.rpc.createOrder.requestSchema.safeParse({});
+                result = OrdersDomain.rpc.createOrder.requestSchema.safeParse({});
             });
 
             it("should fail validation", () => {
@@ -233,12 +233,12 @@ describe("bookstore-contracts > orders", () => {
         });
     });
 
-    describe("Orders.rpc.createOrder response schema", () => {
+    describe("OrdersDomain.rpc.createOrder response schema", () => {
         describe("when response is valid with active status", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.rpc.createOrder.responseSchema.safeParse({
+                result = OrdersDomain.rpc.createOrder.responseSchema.safeParse({
                     orderId: "ORD-001",
                     items: [
                         {
@@ -263,7 +263,7 @@ describe("bookstore-contracts > orders", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.rpc.createOrder.responseSchema.safeParse({
+                result = OrdersDomain.rpc.createOrder.responseSchema.safeParse({
                     orderId: "ORD-001",
                     items: [],
                     total: 0,
@@ -280,7 +280,7 @@ describe("bookstore-contracts > orders", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.rpc.createOrder.responseSchema.safeParse({
+                result = OrdersDomain.rpc.createOrder.responseSchema.safeParse({
                     orderId: "ORD-001",
                     items: [],
                     total: 0,
@@ -294,12 +294,12 @@ describe("bookstore-contracts > orders", () => {
         });
     });
 
-    describe("Orders.rpc.getOrderSummary request schema", () => {
+    describe("OrdersDomain.rpc.getOrderSummary request schema", () => {
         describe("when request is valid", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.rpc.getOrderSummary.requestSchema.safeParse({
+                result = OrdersDomain.rpc.getOrderSummary.requestSchema.safeParse({
                     orderId: "ORD-042",
                 });
             });
@@ -313,7 +313,7 @@ describe("bookstore-contracts > orders", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Orders.rpc.getOrderSummary.requestSchema.safeParse({});
+                result = OrdersDomain.rpc.getOrderSummary.requestSchema.safeParse({});
             });
 
             it("should fail validation", () => {
@@ -322,28 +322,34 @@ describe("bookstore-contracts > orders", () => {
         });
     });
 
-    describe("Orders domain metadata", () => {
+    describe("OrdersDomain domain metadata", () => {
         describe("routing keys and publication names", () => {
             it("should produce expected routing key for orderCreated event", () => {
-                expect(Orders.events.orderCreated.routingKey).toBe("orders.event.order_created");
+                expect(OrdersDomain.events.orderCreated.routingKey).toBe(
+                    "orders.event.order_created"
+                );
             });
 
             it("should produce expected routing key for orderCancelled event", () => {
-                expect(Orders.events.orderCancelled.routingKey).toBe(
+                expect(OrdersDomain.events.orderCancelled.routingKey).toBe(
                     "orders.event.order_cancelled"
                 );
             });
 
             it("should produce expected routing key for cancelOrder command", () => {
-                expect(Orders.commands.cancelOrder.routingKey).toBe("orders.command.cancel_order");
+                expect(OrdersDomain.commands.cancelOrder.routingKey).toBe(
+                    "orders.command.cancel_order"
+                );
             });
 
             it("should produce expected routing key for createOrder RPC", () => {
-                expect(Orders.rpc.createOrder.routingKey).toBe("orders.rpc.create_order");
+                expect(OrdersDomain.rpc.createOrder.routingKey).toBe("orders.rpc.create_order");
             });
 
             it("should produce expected routing key for getOrderSummary RPC", () => {
-                expect(Orders.rpc.getOrderSummary.routingKey).toBe("orders.rpc.get_order_summary");
+                expect(OrdersDomain.rpc.getOrderSummary.routingKey).toBe(
+                    "orders.rpc.get_order_summary"
+                );
             });
         });
     });

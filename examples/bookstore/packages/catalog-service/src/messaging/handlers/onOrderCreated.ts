@@ -1,5 +1,5 @@
 import { onEvent } from "@apogeelabs/hoppity-operations";
-import { Orders } from "@bookstore/contracts";
+import { OrdersDomain } from "@bookstore/contracts";
 import { decrementStock } from "../../store";
 import { logger } from "../../logger";
 
@@ -8,7 +8,7 @@ import { logger } from "../../logger";
  * The event payload includes fully resolved items (with quantities) from order-service.
  */
 export const onOrderCreatedHandler = onEvent(
-    Orders.events.orderCreated,
+    OrdersDomain.events.orderCreated,
     async (content, _context) => {
         logger.info(`Processing orderCreated for ${content.orderId}`);
         for (const item of content.items) {

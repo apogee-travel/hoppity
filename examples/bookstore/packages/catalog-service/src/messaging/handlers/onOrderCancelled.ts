@@ -1,5 +1,5 @@
 import { onEvent } from "@apogeelabs/hoppity-operations";
-import { Orders } from "@bookstore/contracts";
+import { OrdersDomain } from "@bookstore/contracts";
 import { restoreStock } from "../../store";
 import { logger } from "../../logger";
 
@@ -9,7 +9,7 @@ import { logger } from "../../logger";
  * doesn't need to look up the original order — no cross-service query needed.
  */
 export const onOrderCancelledHandler = onEvent(
-    Orders.events.orderCancelled,
+    OrdersDomain.events.orderCancelled,
     async (content, _context) => {
         logger.info(`Processing orderCancelled for ${content.orderId}`);
         for (const item of content.items) {

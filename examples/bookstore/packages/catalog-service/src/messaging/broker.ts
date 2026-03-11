@@ -1,13 +1,12 @@
 import hoppity from "@apogeelabs/hoppity";
 import { withCustomLogger } from "@apogeelabs/hoppity-logger";
-import { withOperations } from "@apogeelabs/hoppity-operations";
-import type { OperationsBroker } from "@apogeelabs/hoppity-operations";
+import { withOperations, type OperationsBroker } from "@apogeelabs/hoppity-operations";
 import { randomUUID } from "crypto";
 import { logger } from "../logger";
-import { topology } from "./topology";
-import { onOrderCreatedHandler } from "./handlers/onOrderCreated";
-import { onOrderCancelledHandler } from "./handlers/onOrderCancelled";
 import { getStockLevelsHandler } from "./handlers/getStockLevels";
+import { onOrderCancelledHandler } from "./handlers/onOrderCancelled";
+import { onOrderCreatedHandler } from "./handlers/onOrderCreated";
+import { topology } from "./topology";
 
 let brokerInstance: OperationsBroker | null = null;
 

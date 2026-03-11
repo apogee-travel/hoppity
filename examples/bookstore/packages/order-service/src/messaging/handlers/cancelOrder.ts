@@ -1,5 +1,5 @@
 import { onCommand } from "@apogeelabs/hoppity-operations";
-import { Orders } from "@bookstore/contracts";
+import { OrdersDomain } from "@bookstore/contracts";
 import { cancelOrder } from "../../store";
 import { logger } from "../../logger";
 
@@ -11,7 +11,7 @@ import { logger } from "../../logger";
  * maintain its own order-to-items mapping — a deliberate simplification.
  */
 export const cancelOrderHandler = onCommand(
-    Orders.commands.cancelOrder,
+    OrdersDomain.commands.cancelOrder,
     async (content, { broker }) => {
         const order = cancelOrder(content.orderId);
         if (!order) {
@@ -21,7 +21,7 @@ export const cancelOrderHandler = onCommand(
 
         logger.info(`Cancelled order ${order.orderId}`);
 
-        await broker.publishEvent(Orders.events.orderCancelled, {
+        await broker.publishEvent(OrdersDomain.events.orderCancelled, {
             orderId: order.orderId,
             items: order.items,
         });

@@ -9,7 +9,7 @@ import { z } from "zod";
  * catalog-service's state changes would be invisible to anything outside its own
  * stdout log.
  */
-export const Catalog = defineDomain("catalog", {
+export const CatalogDomain = defineDomain("catalog", {
     rpc: {
         getStockLevels: {
             request: z.object({}),

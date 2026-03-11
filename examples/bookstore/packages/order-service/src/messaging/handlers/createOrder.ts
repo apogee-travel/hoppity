@@ -1,5 +1,5 @@
 import { onRpc } from "@apogeelabs/hoppity-operations";
-import { Orders } from "@bookstore/contracts";
+import { OrdersDomain } from "@bookstore/contracts";
 import { createOrder } from "../../store";
 import { logger } from "../../logger";
 
@@ -11,15 +11,20 @@ import { logger } from "../../logger";
  * side-effect path keeps causality clear: the event goes out only after the
  * order is durably created in the store.
  */
-export const createOrderHandler = onRpc(Orders.rpc.createOrder, async (request, { broker }) => {
-    const order = createOrder(request.items);
-    logger.info(`Created order ${order.orderId} (${order.items.length} items, $${order.total})`);
+export const createOrderHandler = onRpc(
+    OrdersDomain.rpc.createOrder,
+    async (request, { broker }) => {
+        const order = createOrder(request.items);
+        logger.info(
+            `Created order ${order.orderId} (${order.items.length} items, $${order.total})`
+        );
 
-    await broker.publishEvent(Orders.events.orderCreated, {
-        orderId: order.orderId,
-        items: order.items,
-        total: order.total,
-    });
+        await broker.publishEvent(OrdersDomain.events.orderCreated, {
+            orderId: order.orderId,
+            items: order.items,
+            total: order.total,
+        });
 
-    return order;
-});
+        return order;
+    }
+);

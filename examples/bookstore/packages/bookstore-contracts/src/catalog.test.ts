@@ -2,15 +2,15 @@
 
 export default {};
 
-import { Catalog } from "./catalog";
+import { CatalogDomain } from "./catalog";
 
 describe("bookstore-contracts > catalog", () => {
-    describe("Catalog.rpc.getStockLevels request schema", () => {
+    describe("CatalogDomain.rpc.getStockLevels request schema", () => {
         describe("when request is an empty object", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Catalog.rpc.getStockLevels.requestSchema.safeParse({});
+                result = CatalogDomain.rpc.getStockLevels.requestSchema.safeParse({});
             });
 
             it("should parse successfully", () => {
@@ -19,12 +19,12 @@ describe("bookstore-contracts > catalog", () => {
         });
     });
 
-    describe("Catalog.rpc.getStockLevels response schema", () => {
+    describe("CatalogDomain.rpc.getStockLevels response schema", () => {
         describe("when response is valid", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Catalog.rpc.getStockLevels.responseSchema.safeParse({
+                result = CatalogDomain.rpc.getStockLevels.responseSchema.safeParse({
                     products: [
                         {
                             productId: "widget-1",
@@ -55,7 +55,7 @@ describe("bookstore-contracts > catalog", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Catalog.rpc.getStockLevels.responseSchema.safeParse({
+                result = CatalogDomain.rpc.getStockLevels.responseSchema.safeParse({
                     products: [],
                 });
             });
@@ -69,7 +69,7 @@ describe("bookstore-contracts > catalog", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Catalog.rpc.getStockLevels.responseSchema.safeParse({
+                result = CatalogDomain.rpc.getStockLevels.responseSchema.safeParse({
                     products: [
                         {
                             productId: "widget-1",
@@ -90,7 +90,7 @@ describe("bookstore-contracts > catalog", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Catalog.rpc.getStockLevels.responseSchema.safeParse({});
+                result = CatalogDomain.rpc.getStockLevels.responseSchema.safeParse({});
             });
 
             it("should fail validation", () => {
@@ -102,7 +102,7 @@ describe("bookstore-contracts > catalog", () => {
             let result: any;
 
             beforeEach(() => {
-                result = Catalog.rpc.getStockLevels.responseSchema.safeParse({
+                result = CatalogDomain.rpc.getStockLevels.responseSchema.safeParse({
                     products: [
                         {
                             productId: "widget-1",
@@ -119,9 +119,11 @@ describe("bookstore-contracts > catalog", () => {
         });
     });
 
-    describe("Catalog domain metadata", () => {
+    describe("CatalogDomain domain metadata", () => {
         it("should produce expected routing key for getStockLevels RPC", () => {
-            expect(Catalog.rpc.getStockLevels.routingKey).toBe("catalog.rpc.get_stock_levels");
+            expect(CatalogDomain.rpc.getStockLevels.routingKey).toBe(
+                "catalog.rpc.get_stock_levels"
+            );
         });
     });
 });

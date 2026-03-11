@@ -1,5 +1,5 @@
 import { onRpc } from "@apogeelabs/hoppity-operations";
-import { Catalog } from "@bookstore/contracts";
+import { CatalogDomain } from "@bookstore/contracts";
 import { getAllProducts } from "../../store";
 
 /**
@@ -7,7 +7,7 @@ import { getAllProducts } from "../../store";
  * The runner queries this before and after key operations to display stock changes.
  */
 export const getStockLevelsHandler = onRpc(
-    Catalog.rpc.getStockLevels,
+    CatalogDomain.rpc.getStockLevels,
     async (_request, _context) => {
         return { products: getAllProducts() };
     }

@@ -1,6 +1,6 @@
 import { buildServiceTopology } from "@apogeelabs/hoppity-contracts";
 import { BrokerConfig } from "rascal";
-import { Orders, Catalog } from "@bookstore/contracts";
+import { OrdersDomain, CatalogDomain } from "@bookstore/contracts";
 import { config } from "../config";
 import { randomUUID } from "crypto";
 
@@ -36,10 +36,10 @@ const baseTopology: BrokerConfig = {
 };
 
 const topologyWithRpcCalls = buildServiceTopology(baseTopology, "runner", t => {
-    t.callsRpc(Orders.rpc.createOrder);
-    t.callsRpc(Orders.rpc.getOrderSummary);
-    t.sendsCommand(Orders.commands.cancelOrder);
-    t.callsRpc(Catalog.rpc.getStockLevels);
+    t.callsRpc(OrdersDomain.rpc.createOrder);
+    t.callsRpc(OrdersDomain.rpc.getOrderSummary);
+    t.sendsCommand(OrdersDomain.commands.cancelOrder);
+    t.callsRpc(CatalogDomain.rpc.getStockLevels);
 });
 
 /**

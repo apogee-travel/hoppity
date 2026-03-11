@@ -13,7 +13,7 @@ import {
     printCurrentStock,
     formatOrderSummary,
 } from "./output";
-import { Orders, Catalog } from "@bookstore/contracts";
+import { OrdersDomain, CatalogDomain } from "@bookstore/contracts";
 
 /**
  * Bookstore Demo Runner
@@ -28,9 +28,9 @@ import { Orders, Catalog } from "@bookstore/contracts";
  *   cancelOrder (command) → orderCancelled (event) → getOrderSummary (RPC)
  */
 
-// Routing keys derived from the Orders domain contracts (orders.{opType}.{snake_name})
-const ROUTING_KEY_ORDER_CREATED = Orders.events.orderCreated.routingKey;
-const ROUTING_KEY_ORDER_CANCELLED = Orders.events.orderCancelled.routingKey;
+// Routing keys derived from the OrdersDomain contracts (orders.{opType}.{snake_name})
+const ROUTING_KEY_ORDER_CREATED = OrdersDomain.events.orderCreated.routingKey;
+const ROUTING_KEY_ORDER_CANCELLED = OrdersDomain.events.orderCancelled.routingKey;
 
 async function pause(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -93,7 +93,7 @@ async function main(): Promise<void> {
         // --- Phase 2: Initial stock snapshot ---
         printSeparator();
         console.log("\n  Initial Stock Levels");
-        const initialStock = await broker.request(Catalog.rpc.getStockLevels, {});
+        const initialStock = await broker.request(CatalogDomain.rpc.getStockLevels, {});
         printCurrentStock(initialStock.products, "Before any orders:");
 
         // ───────────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ async function main(): Promise<void> {
 
         printStepHeader(1, "Create Order (RPC)");
         printSend("createOrder RPC → order-service");
-        const createdOrder = await broker.request(Orders.rpc.createOrder, {
+        const createdOrder = await broker.request(OrdersDomain.rpc.createOrder, {
             items: [
                 { productId: "widget-1", quantity: 3 },
                 { productId: "gadget-1", quantity: 1 },
@@ -128,7 +128,7 @@ async function main(): Promise<void> {
         // Give catalog-service a moment to finish processing before querying stock
         await pause(1500);
 
-        const stockAfterCreate = await broker.request(Catalog.rpc.getStockLevels, {});
+        const stockAfterCreate = await broker.request(CatalogDomain.rpc.getStockLevels, {});
         printStockLevels(
             initialStock.products,
             stockAfterCreate.products,
@@ -137,7 +137,9 @@ async function main(): Promise<void> {
 
         printStepHeader(3, "Get Order Summary (RPC)");
         printSend(`getOrderSummary RPC for ${orderId}`);
-        const summaryAfterCreate = await broker.request(Orders.rpc.getOrderSummary, { orderId });
+        const summaryAfterCreate = await broker.request(OrdersDomain.rpc.getOrderSummary, {
+            orderId,
+        });
         printReceive(formatOrderSummary(summaryAfterCreate));
 
         await pause(1000);
@@ -151,7 +153,7 @@ async function main(): Promise<void> {
 
         printStepHeader(4, "Cancel Order (Command)");
         printCommand(`cancelOrder command → order-service (orderId: ${orderId})`);
-        await broker.sendCommand(Orders.commands.cancelOrder, { orderId });
+        await broker.sendCommand(OrdersDomain.commands.cancelOrder, { orderId });
         printReceive("Command sent (fire-and-forget)");
 
         printStepHeader(5, "Order Cancelled Event (via outbound tap)");
@@ -161,7 +163,7 @@ async function main(): Promise<void> {
 
         await pause(1500);
 
-        const stockAfterCancel = await broker.request(Catalog.rpc.getStockLevels, {});
+        const stockAfterCancel = await broker.request(CatalogDomain.rpc.getStockLevels, {});
         printStockLevels(
             stockAfterCreate.products,
             stockAfterCancel.products,
@@ -170,7 +172,9 @@ async function main(): Promise<void> {
 
         printStepHeader(6, "Get Order Summary (RPC)");
         printSend(`getOrderSummary RPC for ${orderId} (after cancellation)`);
-        const summaryAfterCancel = await broker.request(Orders.rpc.getOrderSummary, { orderId });
+        const summaryAfterCancel = await broker.request(OrdersDomain.rpc.getOrderSummary, {
+            orderId,
+        });
         printReceive(formatOrderSummary(summaryAfterCancel));
 
         // --- Done ---
