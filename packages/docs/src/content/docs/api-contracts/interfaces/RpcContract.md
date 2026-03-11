@@ -5,7 +5,7 @@ prev: false
 title: "RpcContract"
 ---
 
-Defined in: [types.ts:61](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L61)
+Defined in: [types.ts:61](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L61)
 
 A contract describing a domain RPC operation — a synchronous request/response.
 
@@ -36,7 +36,7 @@ mechanics separate from pub/sub event routing.
 
 > **\_domain**: `TDomain`
 
-Defined in: [types.ts:68](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L68)
+Defined in: [types.ts:68](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L68)
 
 ---
 
@@ -44,7 +44,7 @@ Defined in: [types.ts:68](https://github.com/apogee-travel/hoppity/blob/44686f84
 
 > **\_name**: `TName`
 
-Defined in: [types.ts:69](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L69)
+Defined in: [types.ts:69](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L69)
 
 ---
 
@@ -52,7 +52,7 @@ Defined in: [types.ts:69](https://github.com/apogee-travel/hoppity/blob/44686f84
 
 > **\_type**: `"rpc"`
 
-Defined in: [types.ts:67](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L67)
+Defined in: [types.ts:67](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L67)
 
 ---
 
@@ -60,7 +60,7 @@ Defined in: [types.ts:67](https://github.com/apogee-travel/hoppity/blob/44686f84
 
 > **exchange**: `string`
 
-Defined in: [types.ts:73](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L73)
+Defined in: [types.ts:73](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L73)
 
 The RPC exchange name: {domain}\_rpc
 
@@ -70,7 +70,7 @@ The RPC exchange name: {domain}\_rpc
 
 > **publicationName**: `string`
 
-Defined in: [types.ts:77](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L77)
+Defined in: [types.ts:77](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L77)
 
 The rascal publication name: {domain}_rpc_{snake_name}
 
@@ -80,7 +80,7 @@ The rascal publication name: {domain}_rpc_{snake_name}
 
 > **requestSchema**: `TRequest`
 
-Defined in: [types.ts:70](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L70)
+Defined in: [types.ts:70](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L70)
 
 ---
 
@@ -88,7 +88,7 @@ Defined in: [types.ts:70](https://github.com/apogee-travel/hoppity/blob/44686f84
 
 > **responseSchema**: `TResponse`
 
-Defined in: [types.ts:71](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L71)
+Defined in: [types.ts:71](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L71)
 
 ---
 
@@ -96,7 +96,7 @@ Defined in: [types.ts:71](https://github.com/apogee-travel/hoppity/blob/44686f84
 
 > **routingKey**: `string`
 
-Defined in: [types.ts:75](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L75)
+Defined in: [types.ts:75](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L75)
 
 The topic routing key: {domain}.rpc.{snake_name}
 
@@ -106,6 +106,6 @@ The topic routing key: {domain}.rpc.{snake_name}
 
 > **subscriptionName**: `string`
 
-Defined in: [types.ts:79](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L79)
+Defined in: [types.ts:79](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L79)
 
 The rascal subscription name: {domain}_rpc_{snake_name}

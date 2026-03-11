@@ -5,7 +5,7 @@ prev: false
 title: "DelayedPublishError"
 ---
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:230](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L230)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:230](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L230)
 
 Structured error class for delayed publish operations.
 
@@ -39,7 +39,7 @@ try {
 
 > **new DelayedPublishError**(`code`, `message`, `details?`): `DelayedPublishError`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:240](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L240)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:240](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L240)
 
 #### Parameters
 
@@ -81,7 +81,7 @@ Defined in: node_modules/.pnpm/typescript@5.8.3/node_modules/typescript/lib/lib.
 
 > `readonly` **code**: [`DelayedPublishErrorCode`](/hoppity/api-delayed-publish/enumerations/delayedpublisherrorcode/)
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:232](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L232)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:232](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L232)
 
 Machine-readable error code identifying the failure mode.
 
@@ -91,7 +91,7 @@ Machine-readable error code identifying the failure mode.
 
 > `readonly` `optional` **details**: `any`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:238](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L238)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:238](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L238)
 
 Optional contextual details about the failure. Shape varies by error code
 but typically includes `originalError`, `retryCount`, `maxRetries`,

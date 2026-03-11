@@ -5,7 +5,7 @@ prev: false
 title: "RpcErrorCode"
 ---
 
-Defined in: [packages/hoppity-rpc/src/types.ts:172](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L172)
+Defined in: [packages/hoppity-rpc/src/types.ts:172](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L172)
 
 Standard RPC error codes.
 
@@ -19,7 +19,7 @@ don't collide with HTTP status codes or AMQP reply codes.
 
 > **CANCELLED**: `"RPC_CANCELLED"`
 
-Defined in: [packages/hoppity-rpc/src/types.ts:180](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L180)
+Defined in: [packages/hoppity-rpc/src/types.ts:180](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L180)
 
 Request was cancelled
 
@@ -29,7 +29,7 @@ Request was cancelled
 
 > **HANDLER_ERROR**: `"RPC_HANDLER_ERROR"`
 
-Defined in: [packages/hoppity-rpc/src/types.ts:178](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L178)
+Defined in: [packages/hoppity-rpc/src/types.ts:178](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L178)
 
 Error occurred in the RPC handler
 
@@ -39,7 +39,7 @@ Error occurred in the RPC handler
 
 > **METHOD_NOT_FOUND**: `"RPC_METHOD_NOT_FOUND"`
 
-Defined in: [packages/hoppity-rpc/src/types.ts:176](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L176)
+Defined in: [packages/hoppity-rpc/src/types.ts:176](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L176)
 
 RPC method not found
 
@@ -49,7 +49,7 @@ RPC method not found
 
 > **SERVICE_UNAVAILABLE**: `"RPC_SERVICE_UNAVAILABLE"`
 
-Defined in: [packages/hoppity-rpc/src/types.ts:182](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L182)
+Defined in: [packages/hoppity-rpc/src/types.ts:182](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L182)
 
 Service unavailable
 
@@ -59,6 +59,6 @@ Service unavailable
 
 > **TIMEOUT**: `"RPC_TIMEOUT"`
 
-Defined in: [packages/hoppity-rpc/src/types.ts:174](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L174)
+Defined in: [packages/hoppity-rpc/src/types.ts:174](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L174)
 
 Request timed out

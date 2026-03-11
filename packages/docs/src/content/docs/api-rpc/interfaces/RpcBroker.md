@@ -5,7 +5,7 @@ prev: false
 title: "RpcBroker"
 ---
 
-Defined in: [packages/hoppity-rpc/src/types.ts:126](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L126)
+Defined in: [packages/hoppity-rpc/src/types.ts:126](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L126)
 
 Extended broker interface with RPC capabilities.
 
@@ -123,7 +123,7 @@ v0.1.26
 
 > **addRpcListener**\<`TRequest`, `TResponse`\>(`rpcName`, `handler`): `void`
 
-Defined in: [packages/hoppity-rpc/src/types.ts:151](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L151)
+Defined in: [packages/hoppity-rpc/src/types.ts:151](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L151)
 
 Registers a handler for an RPC method
 
@@ -181,7 +181,7 @@ Defined in: node_modules/.pnpm/@types+rascal@10.2.1/node_modules/@types/rascal/i
 
 > **cancelRequest**(`correlationId`): `boolean`
 
-Defined in: [packages/hoppity-rpc/src/types.ts:162](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L162)
+Defined in: [packages/hoppity-rpc/src/types.ts:162](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L162)
 
 Cancels a pending RPC request
 
@@ -1039,7 +1039,7 @@ v0.1.26
 
 > **request**\<`TRequest`, `TResponse`\>(`rpcName`, `message`, `overrides?`): `Promise`\<`TResponse`\>
 
-Defined in: [packages/hoppity-rpc/src/types.ts:137](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L137)
+Defined in: [packages/hoppity-rpc/src/types.ts:137](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L137)
 
 Makes an RPC request to another service
 

@@ -5,7 +5,7 @@ prev: false
 title: "DelayedPublishBroker"
 ---
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:149](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L149)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:149](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L149)
 
 Extended broker interface that adds the `delayedPublish()` method to
 Rascal's `BrokerAsPromised`.
@@ -165,7 +165,7 @@ Defined in: node_modules/.pnpm/@types+rascal@10.2.1/node_modules/@types/rascal/i
 
 > **delayedPublish**(`publication`, `message`, `overrides?`, `delay?`): `Promise`\<`void`\>
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:172](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L172)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:172](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L172)
 
 Publishes a message with a delay before it gets re-published to its
 original destination.

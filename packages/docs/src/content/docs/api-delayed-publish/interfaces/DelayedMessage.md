@@ -5,7 +5,7 @@ prev: false
 title: "DelayedMessage"
 ---
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:102](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L102)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:102](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L102)
 
 Envelope structure wrapping a delayed message in the wait queue.
 
@@ -39,7 +39,7 @@ const msg: DelayedMessage = {
 
 > **createdAt**: `number`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:116](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L116)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:116](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L116)
 
 Unix timestamp (ms) when `delayedPublish()` was called. Useful for observability.
 
@@ -49,7 +49,7 @@ Unix timestamp (ms) when `delayedPublish()` was called. Useful for observability
 
 > **originalMessage**: `any`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:104](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L104)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:104](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L104)
 
 The original message payload passed to `delayedPublish()`.
 
@@ -59,7 +59,7 @@ The original message payload passed to `delayedPublish()`.
 
 > `optional` **originalOverrides**: `PublicationConfig`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:112](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L112)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:112](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L112)
 
 Optional Rascal `PublicationConfig` overrides passed to `delayedPublish()`.
 
@@ -69,7 +69,7 @@ Optional Rascal `PublicationConfig` overrides passed to `delayedPublish()`.
 
 > **originalPublication**: `string`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:110](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L110)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:110](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L110)
 
 The Rascal publication name to use when re-publishing the message
 after the delay expires. Must reference a publication already defined
@@ -81,7 +81,7 @@ in the broker topology.
 
 > `optional` **retryCount**: `number`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:124](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L124)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:124](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L124)
 
 Number of re-publish retry attempts that have occurred so far.
 Starts at `0` and increments on each failed re-publish attempt.
@@ -97,6 +97,6 @@ When this reaches `maxRetries`, the message is routed to the error queue.
 
 > **targetDelay**: `number`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:114](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L114)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:114](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L114)
 
 The intended delay in milliseconds (used as the per-message TTL on the wait queue).

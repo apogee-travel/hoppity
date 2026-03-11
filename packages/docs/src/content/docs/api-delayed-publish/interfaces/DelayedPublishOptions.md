@@ -5,7 +5,7 @@ prev: false
 title: "DelayedPublishOptions"
 ---
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:30](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L30)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:30](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L30)
 
 Configuration options for the delayed publish middleware.
 
@@ -42,7 +42,7 @@ const options: DelayedPublishOptions = {
 
 > `optional` **defaultDelay**: `number`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:51](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L51)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:51](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L51)
 
 Default delay in milliseconds applied when `delayedPublish()` is called
 without an explicit `delay` argument.
@@ -57,7 +57,7 @@ without an explicit `delay` argument.
 
 > `optional` **durable**: `boolean`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:75](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L75)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:75](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L75)
 
 Controls both queue durability and message persistence. When `true`,
 queues survive broker restarts and messages are written to disk.
@@ -73,7 +73,7 @@ Set to `false` for non-persistent queues in dev/test environments.
 
 > **instanceId**: `string`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:44](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L44)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:44](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L44)
 
 Unique identifier for this service instance. Used for queue naming to
 prevent conflicts when multiple instances of the same service are running.
@@ -86,7 +86,7 @@ Must be a non-empty, non-whitespace string. Typically a `randomUUID()`.
 
 > `optional` **maxRetries**: `number`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:59](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L59)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:59](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L59)
 
 Maximum number of retry attempts when re-publishing a message from the
 ready queue fails. After exhausting retries, the message is routed to
@@ -102,7 +102,7 @@ the error queue (`{serviceName}_delayed_errors`).
 
 > `optional` **retryDelay**: `number`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:67](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L67)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:67](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L67)
 
 Delay in milliseconds between retry attempts. Retries are implemented by
 re-publishing the message back to the wait queue with this value as the
@@ -118,7 +118,7 @@ per-message TTL, avoiding tight retry loops.
 
 > **serviceName**: `string`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:37](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L37)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:37](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L37)
 
 The name of the service. Used as the prefix for all queue, publication,
 and subscription names created by the middleware.

@@ -7,7 +7,7 @@ title: "withCustomLogger"
 
 > **withCustomLogger**(`options`): `MiddlewareFunction`
 
-Defined in: [hoppity-logger/src/withCustomLogger.ts:41](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-logger/src/withCustomLogger.ts#L41)
+Defined in: [hoppity-logger/src/withCustomLogger.ts:41](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-logger/src/withCustomLogger.ts#L41)
 
 Middleware that sets a custom logger on the context.
 This allows downstream middleware to use the provided logger instead of the default console logger.

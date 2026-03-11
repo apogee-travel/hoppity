@@ -5,7 +5,7 @@ prev: false
 title: "DomainDefinition"
 ---
 
-Defined in: [types.ts:138](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L138)
+Defined in: [types.ts:138](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L138)
 
 The return type of defineDomain. Groups all contracts for a domain under
 their operation-type namespaces.
@@ -34,7 +34,7 @@ their operation-type namespaces.
 
 > **commands**: [`CommandContracts`](/hoppity/api-contracts/type-aliases/commandcontracts/)\<`TDomain`, `TCommands`\>
 
-Defined in: [types.ts:146](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L146)
+Defined in: [types.ts:146](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L146)
 
 ---
 
@@ -42,7 +42,7 @@ Defined in: [types.ts:146](https://github.com/apogee-travel/hoppity/blob/44686f8
 
 > **domain**: `TDomain`
 
-Defined in: [types.ts:144](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L144)
+Defined in: [types.ts:144](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L144)
 
 ---
 
@@ -50,7 +50,7 @@ Defined in: [types.ts:144](https://github.com/apogee-travel/hoppity/blob/44686f8
 
 > **events**: [`EventContracts`](/hoppity/api-contracts/type-aliases/eventcontracts/)\<`TDomain`, `TEvents`\>
 
-Defined in: [types.ts:145](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L145)
+Defined in: [types.ts:145](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L145)
 
 ---
 
@@ -58,4 +58,4 @@ Defined in: [types.ts:145](https://github.com/apogee-travel/hoppity/blob/44686f8
 
 > **rpc**: [`RpcContracts`](/hoppity/api-contracts/type-aliases/rpccontracts/)\<`TDomain`, `TRpc`\>
 
-Defined in: [types.ts:147](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L147)
+Defined in: [types.ts:147](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L147)

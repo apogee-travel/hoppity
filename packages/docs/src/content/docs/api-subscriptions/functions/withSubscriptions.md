@@ -7,7 +7,7 @@ title: "withSubscriptions"
 
 > **withSubscriptions**(`handlers`): `MiddlewareFunction`
 
-Defined in: [withSubscriptions.ts:25](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-subscriptions/src/withSubscriptions.ts#L25)
+Defined in: [withSubscriptions.ts:25](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-subscriptions/src/withSubscriptions.ts#L25)
 
 Middleware function that sets up subscription handlers for a Rascal broker.
 

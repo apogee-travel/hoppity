@@ -7,7 +7,7 @@ title: "validateSubscriptionHandlers"
 
 > **validateSubscriptionHandlers**(`topology`, `handlers`): [`ValidationResult`](/hoppity/api-subscriptions/interfaces/validationresult/)
 
-Defined in: [validation.ts:40](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-subscriptions/src/validation.ts#L40)
+Defined in: [validation.ts:40](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-subscriptions/src/validation.ts#L40)
 
 Validates subscription handlers against the broker topology.
 

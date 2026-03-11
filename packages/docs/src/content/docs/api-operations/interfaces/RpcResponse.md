@@ -5,7 +5,7 @@ prev: false
 title: "RpcResponse"
 ---
 
-Defined in: [packages/hoppity-operations/src/types.ts:150](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L150)
+Defined in: [packages/hoppity-operations/src/types.ts:150](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L150)
 
 ## Properties
 
@@ -13,7 +13,7 @@ Defined in: [packages/hoppity-operations/src/types.ts:150](https://github.com/ap
 
 > **correlationId**: `string`
 
-Defined in: [packages/hoppity-operations/src/types.ts:151](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L151)
+Defined in: [packages/hoppity-operations/src/types.ts:151](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L151)
 
 ---
 
@@ -21,7 +21,7 @@ Defined in: [packages/hoppity-operations/src/types.ts:151](https://github.com/ap
 
 > `optional` **error**: `object`
 
-Defined in: [packages/hoppity-operations/src/types.ts:153](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L153)
+Defined in: [packages/hoppity-operations/src/types.ts:153](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L153)
 
 #### code
 
@@ -41,4 +41,4 @@ Defined in: [packages/hoppity-operations/src/types.ts:153](https://github.com/ap
 
 > `optional` **payload**: `any`
 
-Defined in: [packages/hoppity-operations/src/types.ts:152](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L152)
+Defined in: [packages/hoppity-operations/src/types.ts:152](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L152)

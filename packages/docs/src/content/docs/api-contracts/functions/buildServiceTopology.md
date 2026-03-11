@@ -7,7 +7,7 @@ title: "buildServiceTopology"
 
 > **buildServiceTopology**(`initialTopology`, `serviceName`, `configure`): `BrokerConfig`
 
-Defined in: [buildServiceTopology.ts:223](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/buildServiceTopology.ts#L223)
+Defined in: [buildServiceTopology.ts:223](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/buildServiceTopology.ts#L223)
 
 Generates topology for a service's messaging roles against domain contracts.
 

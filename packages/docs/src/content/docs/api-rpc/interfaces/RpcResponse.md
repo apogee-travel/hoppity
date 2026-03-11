@@ -5,7 +5,7 @@ prev: false
 title: "RpcResponse"
 ---
 
-Defined in: [packages/hoppity-rpc/src/types.ts:88](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L88)
+Defined in: [packages/hoppity-rpc/src/types.ts:88](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L88)
 
 Structure of an RPC response message.
 
@@ -36,7 +36,7 @@ const failure: RpcResponse = {
 
 > **correlationId**: `string`
 
-Defined in: [packages/hoppity-rpc/src/types.ts:90](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L90)
+Defined in: [packages/hoppity-rpc/src/types.ts:90](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L90)
 
 Correlation ID matching the original request
 
@@ -46,7 +46,7 @@ Correlation ID matching the original request
 
 > `optional` **error**: `object`
 
-Defined in: [packages/hoppity-rpc/src/types.ts:94](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L94)
+Defined in: [packages/hoppity-rpc/src/types.ts:94](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L94)
 
 Error information (if the request failed)
 
@@ -74,7 +74,7 @@ Human-readable error message
 
 > `optional` **headers**: `Record`\<`string`, `any`\>
 
-Defined in: [packages/hoppity-rpc/src/types.ts:103](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L103)
+Defined in: [packages/hoppity-rpc/src/types.ts:103](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L103)
 
 Optional headers for additional metadata
 
@@ -84,6 +84,6 @@ Optional headers for additional metadata
 
 > `optional` **payload**: `any`
 
-Defined in: [packages/hoppity-rpc/src/types.ts:92](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L92)
+Defined in: [packages/hoppity-rpc/src/types.ts:92](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L92)
 
 The response payload (if successful)

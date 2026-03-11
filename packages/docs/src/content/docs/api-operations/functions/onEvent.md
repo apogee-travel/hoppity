@@ -7,7 +7,7 @@ title: "onEvent"
 
 > **onEvent**\<`TSchema`\>(`contract`, `handler`): [`EventHandlerDeclaration`](/hoppity/api-operations/interfaces/eventhandlerdeclaration/)
 
-Defined in: [packages/hoppity-operations/src/handlers.ts:19](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/handlers.ts#L19)
+Defined in: [packages/hoppity-operations/src/handlers.ts:19](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/handlers.ts#L19)
 
 Declares a typed event handler for use in withOperations middleware config.
 

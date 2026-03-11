@@ -5,7 +5,7 @@ prev: false
 title: "OperationsBroker"
 ---
 
-Defined in: [packages/hoppity-operations/src/types.ts:116](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L116)
+Defined in: [packages/hoppity-operations/src/types.ts:116](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L116)
 
 Broker instance extended with typed contract-based operation methods.
 Obtained by casting the result of `hoppity.build()` after `withOperations` middleware.
@@ -122,7 +122,7 @@ Defined in: node_modules/.pnpm/@types+rascal@10.2.1/node_modules/@types/rascal/i
 
 > **cancelRequest**(`correlationId`): `boolean`
 
-Defined in: [packages/hoppity-operations/src/types.ts:135](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L135)
+Defined in: [packages/hoppity-operations/src/types.ts:135](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L135)
 
 #### Parameters
 
@@ -748,7 +748,7 @@ Defined in: node_modules/.pnpm/@types+rascal@10.2.1/node_modules/@types/rascal/i
 
 > **publishEvent**\<`TSchema`\>(`contract`, `message`, `overrides?`): `Promise`\<`void`\>
 
-Defined in: [packages/hoppity-operations/src/types.ts:117](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L117)
+Defined in: [packages/hoppity-operations/src/types.ts:117](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L117)
 
 #### Type Parameters
 
@@ -1006,7 +1006,7 @@ v0.1.26
 
 > **request**\<`TReq`, `TRes`\>(`contract`, `message`, `overrides?`): `Promise`\<`TypeOf`\<`TRes`\>\>
 
-Defined in: [packages/hoppity-operations/src/types.ts:129](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L129)
+Defined in: [packages/hoppity-operations/src/types.ts:129](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L129)
 
 #### Type Parameters
 
@@ -1042,7 +1042,7 @@ Defined in: [packages/hoppity-operations/src/types.ts:129](https://github.com/ap
 
 > **sendCommand**\<`TSchema`\>(`contract`, `message`, `overrides?`): `Promise`\<`void`\>
 
-Defined in: [packages/hoppity-operations/src/types.ts:123](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L123)
+Defined in: [packages/hoppity-operations/src/types.ts:123](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L123)
 
 #### Type Parameters
 

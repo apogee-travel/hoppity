@@ -5,7 +5,7 @@ prev: false
 title: "DomainDefinitionInput"
 ---
 
-Defined in: [types.ts:102](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L102)
+Defined in: [types.ts:102](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L102)
 
 The input shape passed to defineDomain — the raw definition before wrapping
 in contract types.
@@ -30,7 +30,7 @@ in contract types.
 
 > `optional` **commands**: `TCommands`
 
-Defined in: [types.ts:108](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L108)
+Defined in: [types.ts:108](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L108)
 
 ---
 
@@ -38,7 +38,7 @@ Defined in: [types.ts:108](https://github.com/apogee-travel/hoppity/blob/44686f8
 
 > `optional` **events**: `TEvents`
 
-Defined in: [types.ts:107](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L107)
+Defined in: [types.ts:107](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L107)
 
 ---
 
@@ -46,4 +46,4 @@ Defined in: [types.ts:107](https://github.com/apogee-travel/hoppity/blob/44686f8
 
 > `optional` **rpc**: `TRpc`
 
-Defined in: [types.ts:109](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L109)
+Defined in: [types.ts:109](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L109)

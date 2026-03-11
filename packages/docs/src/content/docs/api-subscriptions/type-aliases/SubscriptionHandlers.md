@@ -7,7 +7,7 @@ title: "SubscriptionHandlers"
 
 > **SubscriptionHandlers** = `Record`\<`string`, [`SubscriptionHandler`](/hoppity/api-subscriptions/type-aliases/subscriptionhandler/)\>
 
-Defined in: [types.ts:56](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-subscriptions/src/types.ts#L56)
+Defined in: [types.ts:56](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-subscriptions/src/types.ts#L56)
 
 Map of subscription names to their handler functions.
 

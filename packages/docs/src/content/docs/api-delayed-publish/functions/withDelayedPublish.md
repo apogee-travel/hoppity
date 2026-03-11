@@ -7,7 +7,7 @@ title: "withDelayedPublish"
 
 > **withDelayedPublish**(`options`): `MiddlewareFunction`
 
-Defined in: [packages/hoppity-delayed-publish/src/withDelayedPublish.ts:19](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/withDelayedPublish.ts#L19)
+Defined in: [packages/hoppity-delayed-publish/src/withDelayedPublish.ts:19](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/withDelayedPublish.ts#L19)
 
 Middleware factory that adds delayed publish capabilities to a hoppity broker
 

@@ -5,7 +5,7 @@ prev: false
 title: "RpcRequest"
 ---
 
-Defined in: [packages/hoppity-operations/src/types.ts:142](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L142)
+Defined in: [packages/hoppity-operations/src/types.ts:142](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L142)
 
 ## Properties
 
@@ -13,7 +13,7 @@ Defined in: [packages/hoppity-operations/src/types.ts:142](https://github.com/ap
 
 > **correlationId**: `string`
 
-Defined in: [packages/hoppity-operations/src/types.ts:143](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L143)
+Defined in: [packages/hoppity-operations/src/types.ts:143](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L143)
 
 ---
 
@@ -21,7 +21,7 @@ Defined in: [packages/hoppity-operations/src/types.ts:143](https://github.com/ap
 
 > `optional` **headers**: `Record`\<`string`, `any`\>
 
-Defined in: [packages/hoppity-operations/src/types.ts:147](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L147)
+Defined in: [packages/hoppity-operations/src/types.ts:147](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L147)
 
 ---
 
@@ -29,7 +29,7 @@ Defined in: [packages/hoppity-operations/src/types.ts:147](https://github.com/ap
 
 > **payload**: `any`
 
-Defined in: [packages/hoppity-operations/src/types.ts:145](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L145)
+Defined in: [packages/hoppity-operations/src/types.ts:145](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L145)
 
 ---
 
@@ -37,7 +37,7 @@ Defined in: [packages/hoppity-operations/src/types.ts:145](https://github.com/ap
 
 > **replyTo**: `string`
 
-Defined in: [packages/hoppity-operations/src/types.ts:146](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L146)
+Defined in: [packages/hoppity-operations/src/types.ts:146](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L146)
 
 ---
 
@@ -45,4 +45,4 @@ Defined in: [packages/hoppity-operations/src/types.ts:146](https://github.com/ap
 
 > **rpcName**: `string`
 
-Defined in: [packages/hoppity-operations/src/types.ts:144](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L144)
+Defined in: [packages/hoppity-operations/src/types.ts:144](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L144)

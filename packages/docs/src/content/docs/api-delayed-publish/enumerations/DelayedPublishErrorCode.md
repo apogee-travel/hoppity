@@ -5,7 +5,7 @@ prev: false
 title: "DelayedPublishErrorCode"
 ---
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:199](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L199)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:199](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L199)
 
 Error codes for delayed publish operations.
 
@@ -31,7 +31,7 @@ try {
 
 > **INVALID_DELAY**: `"DELAYED_PUBLISH_INVALID_DELAY"`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:207](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L207)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:207](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L207)
 
 The delay value was zero or negative.
 
@@ -41,7 +41,7 @@ The delay value was zero or negative.
 
 > **MAX_RETRIES_EXCEEDED**: `"DELAYED_PUBLISH_MAX_RETRIES_EXCEEDED"`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:205](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L205)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:205](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L205)
 
 All retry attempts exhausted; the message has been routed to the error queue.
 
@@ -51,7 +51,7 @@ All retry attempts exhausted; the message has been routed to the error queue.
 
 > **QUEUE_FULL**: `"DELAYED_PUBLISH_QUEUE_FULL"`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:201](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L201)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:201](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L201)
 
 Publishing to the wait queue failed (e.g., connection loss, channel error).
 
@@ -61,6 +61,6 @@ Publishing to the wait queue failed (e.g., connection loss, channel error).
 
 > **REPUBLISH_FAILED**: `"DELAYED_PUBLISH_REPUBLISH_FAILED"`
 
-Defined in: [packages/hoppity-delayed-publish/src/types.ts:203](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-delayed-publish/src/types.ts#L203)
+Defined in: [packages/hoppity-delayed-publish/src/types.ts:203](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-delayed-publish/src/types.ts#L203)
 
 Re-publishing the message from the ready queue to its original destination failed.

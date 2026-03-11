@@ -7,7 +7,7 @@ title: "EventHandler"
 
 > **EventHandler**\<`TSchema`\> = (`content`, `context`) => `Promise`\<`void`\> \| `void`
 
-Defined in: [packages/hoppity-operations/src/types.ts:29](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L29)
+Defined in: [packages/hoppity-operations/src/types.ts:29](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L29)
 
 Handler for domain events. May be sync or async — auto-acked on success.
 

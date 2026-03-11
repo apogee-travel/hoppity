@@ -5,7 +5,7 @@ prev: false
 title: "EventContract"
 ---
 
-Defined in: [types.ts:11](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L11)
+Defined in: [types.ts:11](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L11)
 
 A contract describing a domain event — something that happened.
 
@@ -33,7 +33,7 @@ TSchema: the zod schema for the event payload
 
 > **\_domain**: `TDomain`
 
-Defined in: [types.ts:17](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L17)
+Defined in: [types.ts:17](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L17)
 
 ---
 
@@ -41,7 +41,7 @@ Defined in: [types.ts:17](https://github.com/apogee-travel/hoppity/blob/44686f84
 
 > **\_name**: `TName`
 
-Defined in: [types.ts:18](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L18)
+Defined in: [types.ts:18](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L18)
 
 ---
 
@@ -49,7 +49,7 @@ Defined in: [types.ts:18](https://github.com/apogee-travel/hoppity/blob/44686f84
 
 > **\_type**: `"event"`
 
-Defined in: [types.ts:16](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L16)
+Defined in: [types.ts:16](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L16)
 
 ---
 
@@ -57,7 +57,7 @@ Defined in: [types.ts:16](https://github.com/apogee-travel/hoppity/blob/44686f84
 
 > **exchange**: `string`
 
-Defined in: [types.ts:21](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L21)
+Defined in: [types.ts:21](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L21)
 
 The RabbitMQ exchange name for this domain's events and commands
 
@@ -67,7 +67,7 @@ The RabbitMQ exchange name for this domain's events and commands
 
 > **publicationName**: `string`
 
-Defined in: [types.ts:25](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L25)
+Defined in: [types.ts:25](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L25)
 
 The rascal publication name: {domain}_event_{snake_name}
 
@@ -77,7 +77,7 @@ The rascal publication name: {domain}_event_{snake_name}
 
 > **routingKey**: `string`
 
-Defined in: [types.ts:23](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L23)
+Defined in: [types.ts:23](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L23)
 
 The topic routing key: {domain}.event.{snake_name}
 
@@ -87,7 +87,7 @@ The topic routing key: {domain}.event.{snake_name}
 
 > **schema**: `TSchema`
 
-Defined in: [types.ts:19](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L19)
+Defined in: [types.ts:19](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L19)
 
 ---
 
@@ -95,6 +95,6 @@ Defined in: [types.ts:19](https://github.com/apogee-travel/hoppity/blob/44686f84
 
 > **subscriptionName**: `string`
 
-Defined in: [types.ts:27](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/types.ts#L27)
+Defined in: [types.ts:27](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/types.ts#L27)
 
 The rascal subscription name: {domain}_event_{snake_name}

@@ -5,7 +5,7 @@ prev: false
 title: "RpcRequest"
 ---
 
-Defined in: [packages/hoppity-rpc/src/types.ts:52](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L52)
+Defined in: [packages/hoppity-rpc/src/types.ts:52](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L52)
 
 Structure of an RPC request message.
 
@@ -32,7 +32,7 @@ const req: RpcRequest = {
 
 > **correlationId**: `string`
 
-Defined in: [packages/hoppity-rpc/src/types.ts:54](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L54)
+Defined in: [packages/hoppity-rpc/src/types.ts:54](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L54)
 
 Unique correlation ID to match request with response
 
@@ -42,7 +42,7 @@ Unique correlation ID to match request with response
 
 > `optional` **headers**: `Record`\<`string`, `any`\>
 
-Defined in: [packages/hoppity-rpc/src/types.ts:62](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L62)
+Defined in: [packages/hoppity-rpc/src/types.ts:62](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L62)
 
 Optional headers for additional metadata
 
@@ -52,7 +52,7 @@ Optional headers for additional metadata
 
 > **payload**: `any`
 
-Defined in: [packages/hoppity-rpc/src/types.ts:58](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L58)
+Defined in: [packages/hoppity-rpc/src/types.ts:58](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L58)
 
 The request payload
 
@@ -62,7 +62,7 @@ The request payload
 
 > **replyTo**: `string`
 
-Defined in: [packages/hoppity-rpc/src/types.ts:60](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L60)
+Defined in: [packages/hoppity-rpc/src/types.ts:60](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L60)
 
 The reply-to queue name for the response
 
@@ -72,6 +72,6 @@ The reply-to queue name for the response
 
 > **rpcName**: `string`
 
-Defined in: [packages/hoppity-rpc/src/types.ts:56](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-rpc/src/types.ts#L56)
+Defined in: [packages/hoppity-rpc/src/types.ts:56](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-rpc/src/types.ts#L56)
 
 The name of the RPC method being called

@@ -5,7 +5,7 @@ prev: false
 title: "RpcHandlerDeclaration"
 ---
 
-Defined in: [packages/hoppity-operations/src/types.ts:75](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L75)
+Defined in: [packages/hoppity-operations/src/types.ts:75](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L75)
 
 Declaration returned by [onRpc](/hoppity/api-operations/functions/onrpc/).
 
@@ -15,7 +15,7 @@ Declaration returned by [onRpc](/hoppity/api-operations/functions/onrpc/).
 
 > **\_kind**: `"rpc"`
 
-Defined in: [packages/hoppity-operations/src/types.ts:76](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L76)
+Defined in: [packages/hoppity-operations/src/types.ts:76](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L76)
 
 ---
 
@@ -23,7 +23,7 @@ Defined in: [packages/hoppity-operations/src/types.ts:76](https://github.com/apo
 
 > **contract**: `RpcContract`\<`any`, `any`, `any`, `any`\>
 
-Defined in: [packages/hoppity-operations/src/types.ts:77](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L77)
+Defined in: [packages/hoppity-operations/src/types.ts:77](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L77)
 
 ---
 
@@ -31,4 +31,4 @@ Defined in: [packages/hoppity-operations/src/types.ts:77](https://github.com/apo
 
 > **handler**: [`RpcHandler`](/hoppity/api-operations/type-aliases/rpchandler/)\<`any`, `any`\>
 
-Defined in: [packages/hoppity-operations/src/types.ts:78](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-operations/src/types.ts#L78)
+Defined in: [packages/hoppity-operations/src/types.ts:78](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-operations/src/types.ts#L78)

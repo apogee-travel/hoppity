@@ -7,7 +7,7 @@ title: "withOutboundExchange"
 
 > **withOutboundExchange**(`serviceName`): `MiddlewareFunction`
 
-Defined in: [withOutboundExchange.ts:22](https://github.com/apogee-travel/hoppity/blob/44686f847069af050019409a7fbac4f4a8c27beb/packages/hoppity-contracts/src/withOutboundExchange.ts#L22)
+Defined in: [withOutboundExchange.ts:22](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity-contracts/src/withOutboundExchange.ts#L22)
 
 Middleware factory that inserts a per-service fanout outbound exchange.
 
