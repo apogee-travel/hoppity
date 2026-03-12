@@ -7,7 +7,7 @@ title: "default"
 
 > `const` **default**: [`Hoppity`](/hoppity/api/interfaces/hoppity/)
 
-Defined in: [packages/hoppity/src/hoppity.ts:19](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/hoppity.ts#L19)
+Defined in: [packages/hoppity/src/hoppity.ts:19](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/hoppity.ts#L19)
 
 Entry point for hoppity. Create a service, chain middleware, build.
 

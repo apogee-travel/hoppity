@@ -5,7 +5,7 @@ prev: false
 title: "ServiceBroker"
 ---
 
-Defined in: [packages/hoppity/src/broker/types.ts:13](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/types.ts#L13)
+Defined in: [packages/hoppity/src/broker/types.ts:13](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/types.ts#L13)
 
 The fully-wired broker returned by ServiceBuilder.build().
 
@@ -125,7 +125,7 @@ Defined in: node_modules/.pnpm/@types+rascal@10.2.1/node_modules/@types/rascal/i
 
 > **cancelRequest**(`correlationId`): `boolean`
 
-Defined in: [packages/hoppity/src/broker/types.ts:56](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/types.ts#L56)
+Defined in: [packages/hoppity/src/broker/types.ts:56](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/types.ts#L56)
 
 Cancels a pending RPC request by correlation ID.
 Returns true if the request was found and cancelled, false if not found.
@@ -754,7 +754,7 @@ Defined in: node_modules/.pnpm/@types+rascal@10.2.1/node_modules/@types/rascal/i
 
 > **publishEvent**\<`TSchema`\>(`contract`, `message`, `overrides?`): `Promise`\<`void`\>
 
-Defined in: [packages/hoppity/src/broker/types.ts:23](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/types.ts#L23)
+Defined in: [packages/hoppity/src/broker/types.ts:23](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/types.ts#L23)
 
 Publishes an event payload using the contract's derived publication name.
 Validates the payload against the contract schema if validateOutbound is enabled.
@@ -1020,7 +1020,7 @@ v0.1.26
 
 > **request**\<`TReq`, `TRes`\>(`contract`, `message`, `overrides?`): `Promise`\<`TypeOf`\<`TRes`\>\>
 
-Defined in: [packages/hoppity/src/broker/types.ts:46](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/types.ts#L46)
+Defined in: [packages/hoppity/src/broker/types.ts:46](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/types.ts#L46)
 
 Makes an RPC call and returns a Promise resolving to the response.
 Times out after defaultTimeout ms (default 30s). Validates request if
@@ -1060,7 +1060,7 @@ validateOutbound is enabled, validates response if validateInbound is enabled.
 
 > **sendCommand**\<`TSchema`\>(`contract`, `message`, `overrides?`): `Promise`\<`void`\>
 
-Defined in: [packages/hoppity/src/broker/types.ts:35](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/types.ts#L35)
+Defined in: [packages/hoppity/src/broker/types.ts:35](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/types.ts#L35)
 
 Sends a command payload using the contract's derived publication name.
 Validates the payload against the contract schema if validateOutbound is enabled.

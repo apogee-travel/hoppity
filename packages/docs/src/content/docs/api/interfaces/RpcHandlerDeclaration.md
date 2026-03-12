@@ -5,7 +5,7 @@ prev: false
 title: "RpcHandlerDeclaration"
 ---
 
-Defined in: [packages/hoppity/src/handlers/types.ts:108](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/handlers/types.ts#L108)
+Defined in: [packages/hoppity/src/handlers/types.ts:108](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/handlers/types.ts#L108)
 
 Declaration returned by [onRpc](/hoppity/api/functions/onrpc/).
 
@@ -15,7 +15,7 @@ Declaration returned by [onRpc](/hoppity/api/functions/onrpc/).
 
 > **\_kind**: `"rpc"`
 
-Defined in: [packages/hoppity/src/handlers/types.ts:109](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/handlers/types.ts#L109)
+Defined in: [packages/hoppity/src/handlers/types.ts:109](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/handlers/types.ts#L109)
 
 ---
 
@@ -23,7 +23,7 @@ Defined in: [packages/hoppity/src/handlers/types.ts:109](https://github.com/apog
 
 > **contract**: [`RpcContract`](/hoppity/api/interfaces/rpccontract/)\<`any`, `any`, `any`, `any`\>
 
-Defined in: [packages/hoppity/src/handlers/types.ts:110](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/handlers/types.ts#L110)
+Defined in: [packages/hoppity/src/handlers/types.ts:110](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/handlers/types.ts#L110)
 
 ---
 
@@ -31,7 +31,7 @@ Defined in: [packages/hoppity/src/handlers/types.ts:110](https://github.com/apog
 
 > **handler**: [`RpcHandler`](/hoppity/api/type-aliases/rpchandler/)\<`any`, `any`\>
 
-Defined in: [packages/hoppity/src/handlers/types.ts:111](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/handlers/types.ts#L111)
+Defined in: [packages/hoppity/src/handlers/types.ts:111](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/handlers/types.ts#L111)
 
 ---
 
@@ -39,4 +39,4 @@ Defined in: [packages/hoppity/src/handlers/types.ts:111](https://github.com/apog
 
 > `optional` **options**: [`HandlerOptions`](/hoppity/api/interfaces/handleroptions/)
 
-Defined in: [packages/hoppity/src/handlers/types.ts:112](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/handlers/types.ts#L112)
+Defined in: [packages/hoppity/src/handlers/types.ts:112](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/handlers/types.ts#L112)

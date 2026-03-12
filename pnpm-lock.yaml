@@ -8,13 +8,13 @@ importers:
 
   .:
     dependencies:
-      '@apogeelabs/the-agency':
-        specifier: 0.4.0
-        version: 0.4.0
       fast-deep-equal:
         specifier: ^3.1.3
         version: 3.1.3
     devDependencies:
+      '@apogeelabs/the-agency':
+        specifier: 0.8.0
+        version: 0.8.0
       '@changesets/cli':
         specifier: ^2.26.2
         version: 2.29.5
@@ -380,8 +380,8 @@ packages:
     resolution: {integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==}
     engines: {node: '>=6.0.0'}
 
-  '@apogeelabs/the-agency@0.4.0':
-    resolution: {integrity: sha512-CfzV2rsGNHNKGLB5rI0xN3sneZKQ8G/AWGznNQV+MuYYZ3nppHu5/qJylgM9iCgFrklHCwcJ2DLQbZ/c5wRNlQ==}
+  '@apogeelabs/the-agency@0.8.0':
+    resolution: {integrity: sha512-Jp0401yacVb6lii3XcAaXGVu3aeLfRjnlgBVgMOlk0JMPZZf7rR0dsXfmLrvORYp1sD2zlAYJgXCEAY6rj7uZg==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -5650,7 +5650,7 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.8
       '@jridgewell/trace-mapping': 0.3.25
 
-  '@apogeelabs/the-agency@0.4.0':
+  '@apogeelabs/the-agency@0.8.0':
     dependencies:
       prompts: 2.4.2
 

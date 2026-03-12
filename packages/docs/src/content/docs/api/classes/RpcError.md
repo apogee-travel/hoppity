@@ -5,7 +5,7 @@ prev: false
 title: "RpcError"
 ---
 
-Defined in: [packages/hoppity/src/broker/rpc.ts:43](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/rpc.ts#L43)
+Defined in: [packages/hoppity/src/broker/rpc.ts:43](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/rpc.ts#L43)
 
 Typed error for RPC failures. Preserves the error code from the responder
 so callers can distinguish handler errors from timeouts and cancellations.
@@ -20,7 +20,7 @@ so callers can distinguish handler errors from timeouts and cancellations.
 
 > **new RpcError**(`message`, `code`): `RpcError`
 
-Defined in: [packages/hoppity/src/broker/rpc.ts:46](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/rpc.ts#L46)
+Defined in: [packages/hoppity/src/broker/rpc.ts:46](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/rpc.ts#L46)
 
 #### Parameters
 
@@ -58,7 +58,7 @@ Defined in: node_modules/.pnpm/typescript@5.8.3/node_modules/typescript/lib/lib.
 
 > `readonly` **code**: `string`
 
-Defined in: [packages/hoppity/src/broker/rpc.ts:44](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/rpc.ts#L44)
+Defined in: [packages/hoppity/src/broker/rpc.ts:44](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/rpc.ts#L44)
 
 ---
 

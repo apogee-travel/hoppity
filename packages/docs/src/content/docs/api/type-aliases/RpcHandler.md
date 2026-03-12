@@ -7,7 +7,7 @@ title: "RpcHandler"
 
 > **RpcHandler**\<`TReq`, `TRes`\> = (`request`, `context`) => `Promise`\<`z.infer`\<`TRes`\>\>
 
-Defined in: [packages/hoppity/src/handlers/types.ts:79](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/handlers/types.ts#L79)
+Defined in: [packages/hoppity/src/handlers/types.ts:79](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/handlers/types.ts#L79)
 
 Handler for RPC operations. Must be async and return the response type.
 

@@ -5,7 +5,7 @@ prev: false
 title: "Hoppity"
 ---
 
-Defined in: [packages/hoppity/src/types.ts:13](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/types.ts#L13)
+Defined in: [packages/hoppity/src/types.ts:13](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/types.ts#L13)
 
 Entry point interface for hoppity.
 
@@ -17,7 +17,7 @@ Hoppity
 
 > **service**(`serviceName`, `config`): [`ServiceBuilder`](/hoppity/api/classes/servicebuilder/)
 
-Defined in: [packages/hoppity/src/types.ts:22](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/types.ts#L22)
+Defined in: [packages/hoppity/src/types.ts:22](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/types.ts#L22)
 
 Creates a contract-driven service builder. Handlers and publish declarations
 are the topology — everything is derived automatically.

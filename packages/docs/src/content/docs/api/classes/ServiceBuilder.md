@@ -5,7 +5,7 @@ prev: false
 title: "ServiceBuilder"
 ---
 
-Defined in: [packages/hoppity/src/ServiceBuilder.ts:79](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L79)
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:79](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/ServiceBuilder.ts#L79)
 
 The contract-driven service builder.
 
@@ -28,7 +28,7 @@ Build phases when .build() is called:
 
 > **new ServiceBuilder**(`serviceName`, `config`): `ServiceBuilder`
 
-Defined in: [packages/hoppity/src/ServiceBuilder.ts:90](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L90)
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:90](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/ServiceBuilder.ts#L90)
 
 #### Parameters
 
@@ -50,7 +50,7 @@ Defined in: [packages/hoppity/src/ServiceBuilder.ts:90](https://github.com/apoge
 
 > **build**(): `Promise`\<[`ServiceBroker`](/hoppity/api/interfaces/servicebroker/)\>
 
-Defined in: [packages/hoppity/src/ServiceBuilder.ts:116](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L116)
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:116](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/ServiceBuilder.ts#L116)
 
 Builds the service broker by executing all phases in order.
 
@@ -64,7 +64,7 @@ Builds the service broker by executing all phases in order.
 
 > **use**(`middleware`): `ServiceBuilder`
 
-Defined in: [packages/hoppity/src/ServiceBuilder.ts:108](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L108)
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:108](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/ServiceBuilder.ts#L108)
 
 Adds middleware to the pipeline.
 

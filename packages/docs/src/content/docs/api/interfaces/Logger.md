@@ -5,7 +5,7 @@ prev: false
 title: "Logger"
 ---
 
-Defined in: [packages/hoppity/src/types.ts:31](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/types.ts#L31)
+Defined in: [packages/hoppity/src/types.ts:31](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/types.ts#L31)
 
 Logger interface that provides standard logging methods.
 This allows for flexible logging implementations while maintaining a consistent API.
@@ -18,7 +18,7 @@ Logger
 
 > **critical**(`message`, ...`args`): `void`
 
-Defined in: [packages/hoppity/src/types.ts:72](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/types.ts#L72)
+Defined in: [packages/hoppity/src/types.ts:72](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/types.ts#L72)
 
 Log a critical error message
 
@@ -46,7 +46,7 @@ Additional arguments to log
 
 > **debug**(`message`, ...`args`): `void`
 
-Defined in: [packages/hoppity/src/types.ts:44](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/types.ts#L44)
+Defined in: [packages/hoppity/src/types.ts:44](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/types.ts#L44)
 
 Log a debug message
 
@@ -74,7 +74,7 @@ Additional arguments to log
 
 > **error**(`message`, ...`args`): `void`
 
-Defined in: [packages/hoppity/src/types.ts:65](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/types.ts#L65)
+Defined in: [packages/hoppity/src/types.ts:65](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/types.ts#L65)
 
 Log an error message
 
@@ -102,7 +102,7 @@ Additional arguments to log
 
 > **info**(`message`, ...`args`): `void`
 
-Defined in: [packages/hoppity/src/types.ts:51](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/types.ts#L51)
+Defined in: [packages/hoppity/src/types.ts:51](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/types.ts#L51)
 
 Log an info message
 
@@ -130,7 +130,7 @@ Additional arguments to log
 
 > **silly**(`message`, ...`args`): `void`
 
-Defined in: [packages/hoppity/src/types.ts:37](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/types.ts#L37)
+Defined in: [packages/hoppity/src/types.ts:37](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/types.ts#L37)
 
 Log a silly message
 
@@ -158,7 +158,7 @@ Additional arguments to log
 
 > **warn**(`message`, ...`args`): `void`
 
-Defined in: [packages/hoppity/src/types.ts:58](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/types.ts#L58)
+Defined in: [packages/hoppity/src/types.ts:58](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/types.ts#L58)
 
 Log a warning message
 

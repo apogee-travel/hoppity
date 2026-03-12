@@ -5,7 +5,7 @@ prev: false
 title: "DelayedDeliveryEnvelope"
 ---
 
-Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:12](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L12)
+Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:12](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L12)
 
 Wraps the original message during transit through the wait → ready queue pipeline.
 
@@ -20,7 +20,7 @@ ready queue, where it is unwrapped and the original message is re-published.
 
 > **createdAt**: `number`
 
-Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:22](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L22)
+Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:22](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L22)
 
 Unix timestamp (ms) when the delayed publish was initiated
 
@@ -30,7 +30,7 @@ Unix timestamp (ms) when the delayed publish was initiated
 
 > **originalMessage**: `any`
 
-Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:14](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L14)
+Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:14](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L14)
 
 The original message payload
 
@@ -40,7 +40,7 @@ The original message payload
 
 > `optional` **originalOverrides**: `PublicationConfig`
 
-Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:18](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L18)
+Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:18](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L18)
 
 Optional Rascal PublicationConfig overrides forwarded to the re-publish call
 
@@ -50,7 +50,7 @@ Optional Rascal PublicationConfig overrides forwarded to the re-publish call
 
 > **originalPublication**: `string`
 
-Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:16](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L16)
+Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:16](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L16)
 
 The Rascal publication name to use when re-publishing after the delay
 
@@ -60,7 +60,7 @@ The Rascal publication name to use when re-publishing after the delay
 
 > **retryCount**: `number`
 
-Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:24](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L24)
+Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:24](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L24)
 
 Number of re-publish retry attempts so far. Starts at 0.
 
@@ -70,6 +70,6 @@ Number of re-publish retry attempts so far. Starts at 0.
 
 > **targetDelay**: `number`
 
-Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:20](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L20)
+Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:20](https://github.com/apogee-travel/hoppity/blob/c9712023a65181fbb268e1d6f167364721040374/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L20)
 
 The intended delay in milliseconds (used as per-message TTL on the wait queue)
