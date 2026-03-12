@@ -1,33 +1,417 @@
-# @apogeelabs/hoppity — LLM Usage Guide
+# @apogeelabs/hoppity -- LLM Usage Guide
 
-Core middleware pipeline and builder API for composing RabbitMQ broker topologies on Rascal.
+Contract-driven RabbitMQ topology builder for Node.js microservices, built on Rascal. Handlers and publish declarations ARE the topology.
 
 ## Imports
 
+Everything comes from `@apogeelabs/hoppity`. No sub-module imports exist.
+
 ```typescript
-// Default export — the builder entry point
+// Default export -- the entry point
 import hoppity from "@apogeelabs/hoppity";
 
-// Type imports
-import type {
-    MiddlewareFunction,
-    MiddlewareContext,
-    MiddlewareResult,
-    BuilderInterface,
-    BrokerCreatedCallback,
-    BrokerWithExtensions,
-    Hoppity,
-    Logger,
+// Named function exports
+import { defineDomain, onEvent, onCommand, onRpc } from "@apogeelabs/hoppity";
+
+// Class/value exports
+import {
+    ServiceBuilder,
+    ConsoleLogger,
+    defaultLogger,
+    RpcErrorCode,
+    RpcError,
 } from "@apogeelabs/hoppity";
 
-// Class/value imports
-import { ConsoleLogger, defaultLogger } from "@apogeelabs/hoppity";
+// Type exports
+import type {
+    ServiceConfig,
+    ServiceBroker,
+    ConnectionConfig,
+    EventContract,
+    CommandContract,
+    RpcContract,
+    DomainDefinition,
+    DomainDefinitionInput,
+    EventsDefinition,
+    CommandsDefinition,
+    RpcDefinition,
+    HandlerDeclaration,
+    EventHandlerDeclaration,
+    CommandHandlerDeclaration,
+    RpcHandlerDeclaration,
+    EventHandler,
+    CommandHandler,
+    RpcHandler,
+    HandlerContext,
+    HandlerOptions,
+    MiddlewareFunction,
+    MiddlewareResult,
+    MiddlewareContext,
+    BrokerCreatedCallback,
+    BrokerWithExtensions,
+    Logger,
+    Hoppity,
+    RpcRequest,
+    RpcResponse,
+    RpcErrorCodeValue,
+} from "@apogeelabs/hoppity";
 ```
 
-## Type Signatures
+## Entry Point
 
 ```typescript
-// Logger interface — implemented by ConsoleLogger, or bring your own
+const hoppity: {
+    service(serviceName: string, config: ServiceConfig): ServiceBuilder;
+};
+export default hoppity;
+```
+
+`hoppity` is a plain object, not a class. Don't `new` it.
+
+## ServiceConfig
+
+```typescript
+interface ServiceConfig {
+    connection: ConnectionConfig;
+    handlers?: HandlerDeclaration[]; // defaults to []
+    publishes?: (EventContract | CommandContract | RpcContract)[]; // defaults to []
+    topology?: BrokerConfig; // optional raw Rascal config -- merged as base before derived topology
+    instanceId?: string; // auto-generated UUID if not provided
+    defaultTimeout?: number; // RPC timeout in ms (defaults to 30_000)
+    validateInbound?: boolean; // validate incoming payloads against schemas (defaults to true)
+    validateOutbound?: boolean; // validate outgoing payloads against schemas (defaults to false)
+    interceptors?: Interceptor[]; // per-message wrappers for telemetry, tracing, metrics
+    delayedDelivery?: {
+        maxRetries?: number; // max re-publish attempts before error queue (default 5)
+        retryDelay?: number; // ms between retry attempts (default 1000)
+    };
+}
+
+interface ConnectionConfig {
+    url: string; // e.g., "amqp://localhost"
+    vhost?: string; // defaults to "/"
+    options?: Record<string, any>; // e.g., { heartbeat: 10 }
+    retry?: {
+        factor?: number;
+        min?: number; // minimum retry delay in ms
+        max?: number; // maximum retry delay in ms
+    };
+}
+```
+
+## ServiceBuilder
+
+```typescript
+class ServiceBuilder {
+    constructor(serviceName: string, config: ServiceConfig);
+    use(middleware: MiddlewareFunction): ServiceBuilder; // chainable
+    build(): Promise<ServiceBroker>;
+}
+```
+
+## defineDomain
+
+Declares a domain's contracts. Returns typed contract objects for all operations.
+
+```typescript
+function defineDomain<TDomain, TEvents, TCommands, TRpc>(
+    domainName: TDomain,
+    definition: DomainDefinitionInput<TEvents, TCommands, TRpc>
+): DomainDefinition<TDomain, TEvents, TCommands, TRpc>;
+```
+
+Throws if `domainName` is empty or whitespace-only. All sections are optional.
+
+### Bare schema form
+
+```typescript
+const OrdersDomain = defineDomain("orders", {
+    events: {
+        orderCreated: z.object({ orderId: z.string() }),
+    },
+    commands: {
+        cancelOrder: z.object({ orderId: z.string() }),
+    },
+    rpc: {
+        createOrder: {
+            request: z.object({ items: z.array(z.string()) }),
+            response: z.object({ orderId: z.string(), total: z.number() }),
+        },
+    },
+});
+```
+
+### Extended form (for future per-operation options)
+
+```typescript
+const OrdersDomain = defineDomain("orders", {
+    events: {
+        orderCreated: {
+            schema: z.object({ orderId: z.string() }),
+            // future options go here
+        },
+    },
+    rpc: {
+        createOrder: {
+            schema: {
+                request: z.object({ items: z.array(z.string()) }),
+                response: z.object({ orderId: z.string() }),
+            },
+        },
+    },
+});
+```
+
+### Contract types returned
+
+Each entry in the returned `DomainDefinition` is a typed contract object:
+
+```typescript
+// OrdersDomain.events.orderCreated is an EventContract with:
+{
+    _type: "event",
+    _domain: "orders",
+    _name: "orderCreated",
+    schema: /* the Zod schema */,
+    exchange: "orders",
+    routingKey: "orders.event.order_created",
+    publicationName: "orders_event_order_created",
+    subscriptionName: "orders_event_order_created",
+}
+
+// CommandContract has the same shape but _type: "command" and routingKey pattern is {domain}.command.{snake_name}
+
+// RpcContract has requestSchema + responseSchema instead of schema,
+// exchange is "{domain}_rpc", routingKey is {domain}.rpc.{snake_name}
+```
+
+## Handler Factories
+
+### onEvent
+
+```typescript
+function onEvent<TSchema extends ZodTypeAny>(
+    contract: EventContract<any, any, TSchema>,
+    handler: (content: z.infer<TSchema>, context: HandlerContext) => Promise<void> | void,
+    options?: HandlerOptions
+): EventHandlerDeclaration;
+```
+
+### onCommand
+
+```typescript
+function onCommand<TSchema extends ZodTypeAny>(
+    contract: CommandContract<any, any, TSchema>,
+    handler: (content: z.infer<TSchema>, context: HandlerContext) => Promise<void> | void,
+    options?: HandlerOptions
+): CommandHandlerDeclaration;
+```
+
+### onRpc
+
+```typescript
+function onRpc<TReq extends ZodTypeAny, TRes extends ZodTypeAny>(
+    contract: RpcContract<any, any, TReq, TRes>,
+    handler: (request: z.infer<TReq>, context: HandlerContext) => Promise<z.infer<TRes>>,
+    options?: HandlerOptions
+): RpcHandlerDeclaration;
+```
+
+### HandlerOptions
+
+```typescript
+interface HandlerOptions {
+    queueType?: "quorum" | "classic"; // defaults to "quorum"
+    redeliveries?: { limit: number }; // defaults to { limit: 5 }
+    deadLetter?: {
+        exchange: string;
+        routingKey?: string;
+    };
+}
+```
+
+### HandlerContext
+
+```typescript
+interface HandlerContext {
+    broker: HandlerContextBroker; // typed broker for outbound operations within handlers
+}
+// HandlerContextBroker has: publishEvent, sendCommand, request, cancelRequest
+```
+
+## ServiceBroker
+
+Returned by `.build()`. Extends Rascal's `BrokerAsPromised` with typed outbound methods.
+
+```typescript
+interface ServiceBroker extends BrokerAsPromised {
+    publishEvent<TSchema>(
+        contract: EventContract,
+        message: z.infer<TSchema>,
+        overrides?: PublicationConfig
+    ): Promise<void>;
+    sendCommand<TSchema>(
+        contract: CommandContract,
+        message: z.infer<TSchema>,
+        overrides?: PublicationConfig
+    ): Promise<void>;
+    request<TReq, TRes>(
+        contract: RpcContract,
+        message: z.infer<TReq>,
+        overrides?: PublicationConfig
+    ): Promise<z.infer<TRes>>;
+    cancelRequest(correlationId: string): boolean;
+}
+```
+
+## Middleware
+
+Middleware functions are synchronous. Async work goes in `onBrokerCreated`.
+
+```typescript
+type MiddlewareFunction = (topology: BrokerConfig, context: MiddlewareContext) => MiddlewareResult;
+
+interface MiddlewareResult {
+    topology: BrokerConfig;
+    onBrokerCreated?: (broker: BrokerAsPromised) => void | Promise<void>;
+}
+
+interface MiddlewareContext {
+    data: Record<string, any>; // mutable shared state
+    middlewareNames: string[]; // names of middleware already executed
+    logger: Logger; // logger instance
+    serviceName?: string; // populated by ServiceBuilder
+}
+```
+
+### Writing custom middleware
+
+```typescript
+const myMiddleware: MiddlewareFunction = (topology, context) => {
+    context.logger.info("Running my middleware");
+    context.data.myFlag = true;
+
+    const modified = structuredClone(topology);
+    // ... modify topology ...
+
+    return {
+        topology: modified,
+        onBrokerCreated: async broker => {
+            // broker is fully wired here
+            context.logger.info("Broker is live");
+        },
+    };
+};
+```
+
+Named functions show their name in error messages and `context.middlewareNames`. Arrow functions show `middleware_N`.
+
+### Middleware order matters
+
+```typescript
+const broker = await hoppity
+    .service("my-service", config)
+    .use(withCustomLogger({ logger })) // first -- so downstream middleware uses custom logger
+    .use(myMiddleware)
+    .build();
+```
+
+## RPC
+
+### Making RPC calls
+
+```typescript
+const result = await broker.request(OrdersDomain.rpc.createOrder, { items });
+// result is typed as z.infer<typeof responseSchema>
+```
+
+### RPC-only caller (no handlers)
+
+```typescript
+const broker = await hoppity
+    .service("gateway-service", {
+        connection: { url: "amqp://localhost" },
+        publishes: [OrdersDomain.rpc.createOrder], // declares outbound RPC
+    })
+    .build();
+```
+
+### RPC error handling
+
+```typescript
+import { RpcError, RpcErrorCode } from "@apogeelabs/hoppity";
+
+try {
+    await broker.request(OrdersDomain.rpc.createOrder, { items });
+} catch (err) {
+    if (err instanceof RpcError) {
+        switch (err.code) {
+            case RpcErrorCode.HANDLER_ERROR:
+                break; // remote handler threw
+            case RpcErrorCode.TIMEOUT:
+                break; // request timed out
+            case RpcErrorCode.CANCELLED:
+                break; // cancelRequest() was called
+        }
+    }
+}
+```
+
+### Cancelling requests
+
+```typescript
+const cancelled = broker.cancelRequest(correlationId); // returns boolean
+```
+
+## Escape Hatch: Raw Topology
+
+For services not using contracts, or for infrastructure that can't be derived:
+
+```typescript
+// Raw topology only
+const broker = await hoppity
+    .service("legacy-service", {
+        connection: { url: "amqp://localhost" },
+        topology: existingRascalConfig,
+    })
+    .build();
+
+// Combined: raw topology as base, derived topology layers on top
+const broker = await hoppity
+    .service("order-service", {
+        connection: { url: "amqp://localhost" },
+        handlers: [cancelOrderHandler],
+        publishes: [OrdersDomain.events.orderCancelled],
+        topology: {
+            vhosts: {
+                "/": {
+                    exchanges: { "order-service-dlx": { type: "topic" } },
+                },
+            },
+        },
+    })
+    .build();
+```
+
+## Naming Conventions
+
+Topology artifact names are derived mechanically from contracts. camelCase operation names become snake_case.
+
+| Artifact                 | Pattern                                  | Example                                    |
+| ------------------------ | ---------------------------------------- | ------------------------------------------ |
+| Exchange (event/command) | `{domain}`                               | `orders`                                   |
+| Exchange (rpc)           | `{domain}_rpc`                           | `orders_rpc`                               |
+| Routing key (event)      | `{domain}.event.{snake_name}`            | `orders.event.order_created`               |
+| Routing key (command)    | `{domain}.command.{snake_name}`          | `orders.command.cancel_order`              |
+| Routing key (rpc)        | `{domain}.rpc.{snake_name}`              | `orders.rpc.create_order`                  |
+| Queue                    | `{service}_{domain}_{type}_{snake_name}` | `order-service_orders_event_order_created` |
+| Publication name         | `{domain}_{type}_{snake_name}`           | `orders_event_order_created`               |
+| Subscription name        | `{domain}_{type}_{snake_name}`           | `orders_event_order_created`               |
+| Reply queue              | `{service}_{instanceId}_reply`           | `order-service_abc123_reply`               |
+
+## Logger
+
+```typescript
 interface Logger {
     silly(message: string, ...args: any[]): void;
     debug(message: string, ...args: any[]): void;
@@ -37,149 +421,32 @@ interface Logger {
     critical(message: string, ...args: any[]): void;
 }
 
-// Shared state passed through the middleware pipeline
-interface MiddlewareContext {
-    data: Record<string, any>; // Mutable shared state for inter-middleware communication
-    middlewareNames: string[]; // Names of executed middleware (in order)
-    logger: Logger; // Logger instance (defaults to ConsoleLogger)
+class ConsoleLogger implements Logger {
+    /* maps to console.log/warn/error */
 }
+const defaultLogger: ConsoleLogger; // singleton
+```
 
-// What every middleware function must return
-interface MiddlewareResult {
-    topology: BrokerConfig;
-    onBrokerCreated?: (broker: BrokerAsPromised) => void | Promise<void>;
-}
+## BrokerWithExtensions
 
-// The middleware function signature — synchronous
-type MiddlewareFunction = (topology: BrokerConfig, context: MiddlewareContext) => MiddlewareResult;
+Utility type for combining a broker with middleware extension methods:
 
-// Callback alias
-type BrokerCreatedCallback = (broker: BrokerAsPromised) => void | Promise<void>;
-
-// Fluent builder interface
-interface BuilderInterface {
-    use(middleware: MiddlewareFunction): BuilderInterface;
-    build(): Promise<BrokerAsPromised>;
-}
-
-// Utility type for extending broker with custom methods
+```typescript
 type BrokerWithExtensions<T extends Record<string, any>[]> = BrokerAsPromised &
     UnionToIntersection<T[number]>;
+
+// Usage with custom logger extensions:
+const broker = (await builder.build()) as BrokerWithExtensions<[{ customMethod: () => void }]>;
 ```
-
-### Entry Point (default export)
-
-```typescript
-const hoppity: {
-    withTopology(topology: BrokerConfig): BuilderInterface;
-    use(middleware: MiddlewareFunction): BuilderInterface;
-};
-```
-
-### ConsoleLogger
-
-```typescript
-class ConsoleLogger implements Logger {
-    silly(message: string, ...args: any[]): void; // → console.log
-    debug(message: string, ...args: any[]): void; // → console.log
-    info(message: string, ...args: any[]): void; // → console.log
-    warn(message: string, ...args: any[]): void; // → console.warn
-    error(message: string, ...args: any[]): void; // → console.error
-    critical(message: string, ...args: any[]): void; // → console.error
-}
-
-const defaultLogger: ConsoleLogger; // Singleton instance
-```
-
-## Usage Examples
-
-### Building a broker with topology
-
-```typescript
-import hoppity from "@apogeelabs/hoppity";
-import { BrokerConfig } from "rascal";
-
-const topology: BrokerConfig = {
-    vhosts: {
-        "/": {
-            connection: {
-                hostname: "localhost",
-                user: "guest",
-                password: "guest",
-                port: 5672,
-                vhost: "/",
-            },
-            exchanges: {
-                events: { type: "topic" },
-            },
-            queues: {
-                event_queue: {},
-            },
-            bindings: {
-                event_binding: {
-                    source: "events",
-                    destination: "event_queue",
-                    bindingKey: "event.#",
-                },
-            },
-            publications: {
-                publish_event: { exchange: "events", routingKey: "event.created" },
-            },
-            subscriptions: {
-                on_event: { queue: "event_queue", prefetch: 1 },
-            },
-        },
-    },
-};
-
-const broker = await hoppity.withTopology(topology).build();
-```
-
-### Writing custom middleware
-
-```typescript
-import { MiddlewareFunction } from "@apogeelabs/hoppity";
-
-const addAuditExchange: MiddlewareFunction = (topology, context) => {
-    const modified = structuredClone(topology);
-    modified.vhosts ??= {};
-    modified.vhosts["/"] ??= {};
-    modified.vhosts["/"].exchanges ??= {};
-    modified.vhosts["/"].exchanges["audit"] = { type: "fanout" };
-
-    context.data.auditExchange = "audit";
-    context.logger.info("Added audit exchange");
-
-    return {
-        topology: modified,
-        onBrokerCreated: async broker => {
-            const sub = await broker.subscribe("audit_subscription");
-            sub.on("message", (msg, content, ackOrNack) => {
-                console.log("Audit event:", content);
-                ackOrNack();
-            });
-        },
-    };
-};
-
-const broker = await hoppity.withTopology(baseTopology).use(addAuditExchange).build();
-```
-
-## How It Works
-
-1. `hoppity.withTopology(config)` creates a `RascalBuilder` that deep-clones the config via `structuredClone()`.
-2. `.use(middleware)` pushes middleware onto an internal array. Returns `this` for chaining.
-3. `.build()` executes three phases:
-    - **Phase 1**: Runs each middleware sequentially. Each receives the cumulative topology and a shared `MiddlewareContext`. `fast-deep-equal` detects topology changes for logging.
-    - **Phase 2**: Calls `BrokerAsPromised.create(finalTopology)` to create the Rascal broker.
-    - **Phase 3**: Runs all `onBrokerCreated` callbacks sequentially. If any fails, the broker is shut down.
-4. All errors are wrapped with pipeline context (middleware name, index, execution count) and include `.cause` chains.
 
 ## Gotchas
 
-- ⚠️ **`hoppity` is a plain object, not a class** — don't `new hoppity()`.
-- ⚠️ **Middleware functions are synchronous** — they return `MiddlewareResult`, not a Promise. Put async work in `onBrokerCreated`.
-- ⚠️ **Always clone topology before modifying** — use `structuredClone(topology)`. The builder clones at construction, but middleware should not mutate the object it receives.
-- ⚠️ **`.build()` returns a Promise** — don't forget to `await` it.
-- ⚠️ **Context mutations are permanent** — anything you put in `context.data` is visible to all downstream middleware.
-- ⚠️ **Named functions are better** — middleware named with `function myMiddleware(...)` shows its name in error messages and `context.middlewareNames`. Arrow functions and anonymous functions show `middleware_N`.
+- `hoppity` is a plain object, not a class. Don't `new` it.
+- Middleware functions are synchronous. Put async work in `onBrokerCreated`.
+- Always clone topology before modifying: `structuredClone(topology)`.
+- `.build()` returns a Promise. Don't forget `await`.
+- Context mutations in `context.data` are permanent and visible to all downstream middleware.
+- Event/command handlers auto-ack on success, nack without requeue on error.
+- RPC handler errors are sent back to the caller as `RpcErrorCode.HANDLER_ERROR`.
+- Inbound Zod validation failures (when `validateInbound: true`) nack without requeue.
+- `publishes` must include any contract you want to call `publishEvent`, `sendCommand`, or `request` on. The topology won't include the publication otherwise.
