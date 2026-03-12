@@ -1,29 +1,66 @@
 # Hoppity — LLM Code Generation Reference
 
-Pattern-driven RabbitMQ topology builder for Node.js microservices, built on Rascal.
+Contract-driven RabbitMQ topology builder for Node.js microservices, built on Rascal.
+
+Handlers and publish declarations ARE the topology. You declare what your service handles and what it sends. Hoppity derives all exchanges, queues, bindings, publications, and subscriptions automatically. No topology files. No manual Rascal config.
 
 ## Package Overview
 
 | Package | npm Name | Version | Status | Dependencies |
 |---------|----------|---------|--------|--------------|
-| hoppity | `@apogeelabs/hoppity` | 0.2.0 | Stable | `rascal@^20.1.1`, `fast-deep-equal@^3.1.3` |
-| hoppity-rpc | `@apogeelabs/hoppity-rpc` | 0.2.0 | Stable | `@apogeelabs/hoppity` (workspace), `rascal@^20.1.1` (peer) |
-| hoppity-delayed-publish | `@apogeelabs/hoppity-delayed-publish` | 0.2.0 | Stable | `@apogeelabs/hoppity` (workspace), `rascal@^20.1.1` (peer) |
-| hoppity-subscriptions | `@apogeelabs/hoppity-subscriptions` | 0.2.0 | Stable | `@apogeelabs/hoppity` (workspace), `rascal@^20.1.1` (peer) |
-| hoppity-logger | `@apogeelabs/hoppity-logger` | 0.2.0 | Stable | `@apogeelabs/hoppity` (workspace), `rascal@^20.1.1` (peer) |
-| hoppity-contracts | `@apogeelabs/hoppity-contracts` | 0.2.0 | Stable | `zod@^3.22.0` (peer) |
-| hoppity-operations | `@apogeelabs/hoppity-operations` | 0.1.0 | Stable | `@apogeelabs/hoppity` (workspace), `@apogeelabs/hoppity-contracts` (workspace), `rascal@^20.1.1` (peer), `zod@^3.22.0` (peer) |
+| hoppity | `@apogeelabs/hoppity` | 1.0.0 | Stable | `rascal@^20.1.1`, `fast-deep-equal@^3.1.3`, `zod@^3.x` |
+| hoppity-logger | `@apogeelabs/hoppity-logger` | 1.0.0 | Stable | `@apogeelabs/hoppity` (workspace), `rascal@^20.1.1` (peer) |
+| hoppity-open-telemetry | `@apogeelabs/hoppity-open-telemetry` | 0.1.0 | Stable | `@apogeelabs/hoppity` (workspace), `@opentelemetry/api@^1.9.0` (peer) |
 
 All packages require Node >= 22. All produce CJS, ESM, and type declarations.
+
+## Import Paths
+
+Everything comes from `@apogeelabs/hoppity`. There are no sub-module imports.
+
+```typescript
+import hoppity, {
+    defineDomain,
+    onEvent,
+    onCommand,
+    onRpc,
+} from "@apogeelabs/hoppity";
+
+import type {
+    ServiceBroker,
+    ServiceConfig,
+    ConnectionConfig,
+    EventContract,
+    CommandContract,
+    RpcContract,
+    DomainDefinition,
+    HandlerDeclaration,
+    HandlerOptions,
+    MiddlewareFunction,
+    MiddlewareResult,
+    MiddlewareContext,
+    BrokerCreatedCallback,
+    Logger,
+    RpcRequest,
+    RpcResponse,
+    RpcErrorCodeValue,
+    Interceptor,
+    InboundWrapper,
+    OutboundWrapper,
+    InboundMetadata,
+    OutboundMetadata,
+} from "@apogeelabs/hoppity";
+
+import { RpcErrorCode, RpcError, ConsoleLogger, defaultLogger } from "@apogeelabs/hoppity";
+```
 
 ## Type Signatures
 
 ### Core Types (`@apogeelabs/hoppity`)
 
-```typescript
-import { BrokerConfig, BrokerAsPromised, PublicationConfig } from "rascal";
+#### Logger
 
-// Logger interface — all middleware and packages use this
+```typescript
 interface Logger {
     silly(message: string, ...args: any[]): void;
     debug(message: string, ...args: any[]): void;
@@ -32,181 +69,54 @@ interface Logger {
     error(message: string, ...args: any[]): void;
     critical(message: string, ...args: any[]): void;
 }
+```
 
-// Shared state passed through the middleware pipeline
+#### MiddlewareContext
+
+```typescript
 interface MiddlewareContext {
-    data: Record<string, any>;      // Mutable shared state for inter-middleware communication
-    middlewareNames: string[];       // Names of all executed middleware (in order)
-    logger: Logger;                  // Logger instance (defaults to ConsoleLogger)
+    data: Record<string, any>;         // Mutable shared state between middleware
+    middlewareNames: string[];          // Names of middleware that have already executed
+    logger: Logger;                     // Logger instance (set by withCustomLogger or defaultLogger)
+    serviceName?: string;               // Populated by ServiceBuilder from hoppity.service(name, ...)
 }
+```
 
-// What every middleware function must return
-interface MiddlewareResult {
-    topology: BrokerConfig;                                       // Modified topology (required)
-    onBrokerCreated?: (broker: BrokerAsPromised) => void | Promise<void>;  // Optional lifecycle hook
-}
+#### MiddlewareFunction / MiddlewareResult / BrokerCreatedCallback
 
-// The middleware function signature
+```typescript
 type MiddlewareFunction = (
     topology: BrokerConfig,
     context: MiddlewareContext
 ) => MiddlewareResult;
 
-// Alias for the onBrokerCreated callback
-type BrokerCreatedCallback = (broker: BrokerAsPromised) => void | Promise<void>;
-
-// The fluent builder API returned by withTopology() and use()
-interface BuilderInterface {
-    use(middleware: MiddlewareFunction): BuilderInterface;
-    build(): Promise<BrokerAsPromised>;
+interface MiddlewareResult {
+    topology: BrokerConfig;
+    onBrokerCreated?: BrokerCreatedCallback;
 }
 
-// Utility type for extending broker with custom methods (used by RPC, delayed-publish)
+type BrokerCreatedCallback = (broker: BrokerAsPromised) => void | Promise<void>;
+```
+
+#### BrokerWithExtensions
+
+Utility type for combining a broker with middleware extension methods (e.g., `delayedPublish`):
+
+```typescript
 type BrokerWithExtensions<T extends Record<string, any>[]> =
     BrokerAsPromised & UnionToIntersection<T[number]>;
 
-// (Internal utility — included for completeness)
-type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void
-    ? I
-    : never;
+// Usage:
+type MyBroker = BrokerWithExtensions<[{ customMethod(): void }]>;
 ```
 
-### RPC Types (`@apogeelabs/hoppity-rpc`)
+---
+
+### Contract Types
+
+#### EventContract
 
 ```typescript
-interface RpcMiddlewareOptions {
-    serviceName: string;          // Used for queue naming and routing
-    instanceId: string;           // Unique per service instance
-    rpcExchange?: string;         // Defaults to "rpc_requests"
-    defaultTimeout?: number;      // Defaults to 30_000 ms
-}
-
-interface RpcRequest {
-    correlationId: string;
-    rpcName: string;
-    payload: any;
-    replyTo: string;
-    headers?: Record<string, any>;
-}
-
-interface RpcResponse {
-    correlationId: string;
-    payload?: any;
-    error?: {
-        code: string;
-        message: string;
-        details?: any;
-    };
-    headers?: Record<string, any>;
-}
-
-// Extended broker interface after withRpcSupport middleware runs
-interface RpcBroker extends BrokerAsPromised {
-    request<TRequest = any, TResponse = any>(
-        rpcName: string,
-        message: TRequest,
-        overrides?: PublicationConfig
-    ): Promise<TResponse>;
-
-    addRpcListener<TRequest = any, TResponse = any>(
-        rpcName: string,
-        handler: (request: TRequest) => Promise<TResponse>
-    ): void;
-
-    cancelRequest(correlationId: string): boolean;
-}
-
-enum RpcErrorCode {
-    TIMEOUT = "RPC_TIMEOUT",
-    METHOD_NOT_FOUND = "RPC_METHOD_NOT_FOUND",
-    HANDLER_ERROR = "RPC_HANDLER_ERROR",
-    CANCELLED = "RPC_CANCELLED",
-    SERVICE_UNAVAILABLE = "RPC_SERVICE_UNAVAILABLE",
-}
-```
-
-### Delayed Publish Types (`@apogeelabs/hoppity-delayed-publish`)
-
-```typescript
-interface DelayedPublishOptions {
-    serviceName: string;          // Used for queue naming
-    instanceId: string;           // Unique per service instance
-    defaultDelay?: number;        // Defaults to 30_000 ms
-    maxRetries?: number;          // Defaults to 5
-    retryDelay?: number;          // Defaults to 1_000 ms
-    durable?: boolean;            // Defaults to true — controls queue durability and message persistence
-}
-
-interface DelayedMessage {
-    originalMessage: any;
-    originalPublication: string;
-    originalOverrides?: PublicationConfig;
-    targetDelay: number;
-    createdAt: number;
-    retryCount?: number;
-}
-
-// Extended broker interface after withDelayedPublish middleware runs
-interface DelayedPublishBroker extends BrokerAsPromised {
-    delayedPublish(
-        publication: string,
-        message: any,
-        overrides?: PublicationConfig,
-        delay?: number               // Uses defaultDelay if omitted
-    ): Promise<void>;
-}
-
-enum DelayedPublishErrorCode {
-    QUEUE_FULL = "DELAYED_PUBLISH_QUEUE_FULL",
-    REPUBLISH_FAILED = "DELAYED_PUBLISH_REPUBLISH_FAILED",
-    MAX_RETRIES_EXCEEDED = "DELAYED_PUBLISH_MAX_RETRIES_EXCEEDED",
-    INVALID_DELAY = "DELAYED_PUBLISH_INVALID_DELAY",
-}
-
-class DelayedPublishError extends Error {
-    public readonly code: DelayedPublishErrorCode;
-    public readonly details?: any;
-    constructor(code: DelayedPublishErrorCode, message: string, details?: any);
-}
-```
-
-### Subscriptions Types (`@apogeelabs/hoppity-subscriptions`)
-
-```typescript
-// Handler receives the raw Rascal message, parsed content, ack/nack function, and broker
-type SubscriptionHandler = (
-    message: any,                                        // Rascal message object
-    content: any,                                        // Parsed message content
-    ackOrNackFn: (err?: Error, recovery?: any) => void,  // Acknowledge or reject
-    broker: BrokerAsPromised                             // Broker instance
-) => Promise<void> | void;
-
-// Map of subscription names to handler functions
-type SubscriptionHandlers = Record<string, SubscriptionHandler>;
-
-interface ValidationResult {
-    isValid: boolean;
-    missingSubscriptions: string[];       // Handler keys with no matching subscription in topology
-    availableSubscriptions: string[];     // Subscription names found in topology
-    invalidHandlers: string[];            // Handler keys that are not functions
-    errorMessage?: string;
-}
-```
-
-### Logger Types (`@apogeelabs/hoppity-logger`)
-
-```typescript
-interface WithCustomLoggerOptions {
-    logger: Logger;   // Any object implementing the Logger interface
-}
-```
-
-### Contracts Types (`@apogeelabs/hoppity-contracts`)
-
-```typescript
-import { ZodTypeAny, z } from "zod";
-
-// Domain event contract — something that happened
 interface EventContract<
     TDomain extends string = string,
     TName extends string = string,
@@ -216,13 +126,16 @@ interface EventContract<
     _domain: TDomain;
     _name: TName;
     schema: TSchema;
-    exchange: string;           // RabbitMQ exchange name
-    routingKey: string;         // Topic routing key: {domain}.event.{snake_name}
-    publicationName: string;    // Rascal publication name: {domain}_event_{snake_name}
-    subscriptionName: string;   // Rascal subscription name: {domain}_event_{snake_name}
+    exchange: string;          // "{domain}" — shared topic exchange for events + commands
+    routingKey: string;        // "{domain}.event.{snake_name}"
+    publicationName: string;   // "{domain}_event_{snake_name}"
+    subscriptionName: string;  // "{domain}_event_{snake_name}"
 }
+```
 
-// Domain command contract — an instruction to do something
+#### CommandContract
+
+```typescript
 interface CommandContract<
     TDomain extends string = string,
     TName extends string = string,
@@ -232,13 +145,16 @@ interface CommandContract<
     _domain: TDomain;
     _name: TName;
     schema: TSchema;
-    exchange: string;
-    routingKey: string;         // {domain}.command.{snake_name}
-    publicationName: string;    // {domain}_command_{snake_name}
-    subscriptionName: string;   // {domain}_command_{snake_name}
+    exchange: string;          // "{domain}" — shared with events
+    routingKey: string;        // "{domain}.command.{snake_name}"
+    publicationName: string;   // "{domain}_command_{snake_name}"
+    subscriptionName: string;  // "{domain}_command_{snake_name}"
 }
+```
 
-// Domain RPC contract — synchronous request/response
+#### RpcContract
+
+```typescript
 interface RpcContract<
     TDomain extends string = string,
     TName extends string = string,
@@ -250,13 +166,32 @@ interface RpcContract<
     _name: TName;
     requestSchema: TRequest;
     responseSchema: TResponse;
-    exchange: string;           // {domain}_rpc
-    routingKey: string;         // {domain}.rpc.{snake_name}
-    publicationName: string;    // {domain}_rpc_{snake_name}
-    subscriptionName: string;   // {domain}_rpc_{snake_name}
+    exchange: string;          // "{domain}_rpc" — separate exchange for RPC
+    routingKey: string;        // "{domain}.rpc.{snake_name}"
+    publicationName: string;   // "{domain}_rpc_{snake_name}"
+    subscriptionName: string;  // "{domain}_rpc_{snake_name}"
 }
+```
 
-// Input to defineDomain
+#### DomainDefinition
+
+```typescript
+interface DomainDefinition<
+    TDomain extends string = string,
+    TEvents extends EventsDefinition = EventsDefinition,
+    TCommands extends CommandsDefinition = CommandsDefinition,
+    TRpc extends RpcDefinition = RpcDefinition,
+> {
+    domain: TDomain;
+    events: { [K in keyof TEvents]: EventContract<TDomain, K & string, ...> };
+    commands: { [K in keyof TCommands]: CommandContract<TDomain, K & string, ...> };
+    rpc: { [K in keyof TRpc]: RpcContract<TDomain, K & string, ...> };
+}
+```
+
+#### DomainDefinitionInput
+
+```typescript
 interface DomainDefinitionInput<
     TEvents extends EventsDefinition = EventsDefinition,
     TCommands extends CommandsDefinition = CommandsDefinition,
@@ -267,81 +202,35 @@ interface DomainDefinitionInput<
     rpc?: TRpc;
 }
 
-type EventsDefinition = Record<string, ZodTypeAny>;
-type CommandsDefinition = Record<string, ZodTypeAny>;
-type RpcDefinition = Record<string, { request: ZodTypeAny; response: ZodTypeAny }>;
+// Each operation accepts a bare Zod schema OR an extended object:
+type EventOperationInput   = ZodTypeAny | { schema: ZodTypeAny; [key: string]: any };
+type CommandOperationInput = ZodTypeAny | { schema: ZodTypeAny; [key: string]: any };
+type RpcOperationInput     =
+    | { request: ZodTypeAny; response: ZodTypeAny }
+    | { schema: { request: ZodTypeAny; response: ZodTypeAny }; [key: string]: any };
+```
 
-// Return type of defineDomain
-interface DomainDefinition<TDomain, TEvents, TCommands, TRpc> {
-    domain: TDomain;
-    events: EventContracts<TDomain, TEvents>;
-    commands: CommandContracts<TDomain, TCommands>;
-    rpc: RpcContracts<TDomain, TRpc>;
-}
+#### HandlerOptions
 
-// Topology builder interface (inside buildServiceTopology callback)
-interface TopologyBuilder {
-    publishesEvent(contract: EventContract): TopologyBuilder;
-    subscribesToEvent(contract: EventContract, options?: HandlerOptions): TopologyBuilder;
-    sendsCommand(contract: CommandContract): TopologyBuilder;
-    handlesCommand(contract: CommandContract, options?: HandlerOptions): TopologyBuilder;
-    callsRpc(contract: RpcContract): TopologyBuilder;
-    respondsToRpc(contract: RpcContract, options?: HandlerOptions): TopologyBuilder;
-}
-
+```typescript
 interface HandlerOptions {
-    queueType?: "quorum" | "classic";   // Defaults to "quorum"
-    redeliveries?: { limit: number };   // Defaults to 5
-    deadLetter?: { exchange: string; routingKey?: string };
+    queueType?: "quorum" | "classic";   // defaults to "quorum"
+    redeliveries?: { limit: number };   // defaults to { limit: 5 }
+    deadLetter?: {
+        exchange: string;
+        routingKey?: string;
+    };
 }
 ```
 
-### Operations Types (`@apogeelabs/hoppity-operations`)
+---
+
+### Handler Types
+
+#### Handler Function Signatures
 
 ```typescript
-import { BrokerAsPromised, PublicationConfig } from "rascal";
-import { EventContract, CommandContract, RpcContract } from "@apogeelabs/hoppity-contracts";
-import { z, ZodTypeAny } from "zod";
-
-// Middleware options
-interface OperationsMiddlewareOptions {
-    serviceName: string;
-    instanceId: string;
-    handlers: HandlerDeclaration[];
-    defaultTimeout?: number;       // RPC timeout in ms (defaults to 30_000)
-    validateInbound?: boolean;     // Validate inbound payloads (defaults to true)
-    validateOutbound?: boolean;    // Validate outbound payloads (defaults to false)
-}
-
-// Extended broker — adds typed operation methods to BrokerAsPromised
-interface OperationsBroker extends BrokerAsPromised {
-    publishEvent<TSchema extends ZodTypeAny>(
-        contract: EventContract<any, any, TSchema>,
-        message: z.infer<TSchema>,
-        overrides?: PublicationConfig
-    ): Promise<void>;
-
-    sendCommand<TSchema extends ZodTypeAny>(
-        contract: CommandContract<any, any, TSchema>,
-        message: z.infer<TSchema>,
-        overrides?: PublicationConfig
-    ): Promise<void>;
-
-    request<TReq extends ZodTypeAny, TRes extends ZodTypeAny>(
-        contract: RpcContract<any, any, TReq, TRes>,
-        message: z.infer<TReq>,
-        overrides?: PublicationConfig
-    ): Promise<z.infer<TRes>>;
-
-    cancelRequest(correlationId: string): boolean;
-}
-
-// Handler context — passed to every handler invocation
-interface HandlerContext {
-    broker: OperationsBroker;
-}
-
-// Handler function signatures
+// Content type is inferred from the contract's schema via z.infer<TSchema>
 type EventHandler<TSchema extends ZodTypeAny> = (
     content: z.infer<TSchema>,
     context: HandlerContext
@@ -352,968 +241,905 @@ type CommandHandler<TSchema extends ZodTypeAny> = (
     context: HandlerContext
 ) => Promise<void> | void;
 
+// RPC handlers must be async and return the response type
 type RpcHandler<TReq extends ZodTypeAny, TRes extends ZodTypeAny> = (
     request: z.infer<TReq>,
     context: HandlerContext
 ) => Promise<z.infer<TRes>>;
+```
 
-// Handler declarations — returned by onEvent / onCommand / onRpc
+#### HandlerContext
+
+```typescript
+interface HandlerContext {
+    broker: HandlerContextBroker;   // Typed broker for outbound operations within handlers
+}
+
+// HandlerContextBroker includes: publishEvent, sendCommand, request, cancelRequest
+// (same signatures as ServiceBroker — see below)
+```
+
+#### HandlerDeclaration (union)
+
+```typescript
 interface EventHandlerDeclaration {
     _kind: "event";
     contract: EventContract;
     handler: EventHandler<any>;
+    options?: HandlerOptions;
 }
 
 interface CommandHandlerDeclaration {
     _kind: "command";
     contract: CommandContract;
     handler: CommandHandler<any>;
+    options?: HandlerOptions;
 }
 
 interface RpcHandlerDeclaration {
     _kind: "rpc";
     contract: RpcContract;
     handler: RpcHandler<any, any>;
+    options?: HandlerOptions;
 }
 
 type HandlerDeclaration =
     | EventHandlerDeclaration
     | CommandHandlerDeclaration
     | RpcHandlerDeclaration;
+```
 
-// RPC wire envelope (compatible with hoppity-rpc format)
+---
+
+### Service Configuration
+
+#### ConnectionConfig
+
+```typescript
+interface ConnectionConfig {
+    url: string;                    // e.g., "amqp://localhost" or "amqp://user:pass@host:5672"
+    vhost?: string;                 // defaults to "/"
+    options?: Record<string, any>;  // e.g., { heartbeat: 10 }
+    retry?: {
+        factor?: number;            // backoff multiplier
+        min?: number;               // minimum retry delay in ms
+        max?: number;               // maximum retry delay in ms
+    };
+}
+```
+
+#### ServiceConfig
+
+```typescript
+interface ServiceConfig {
+    connection: ConnectionConfig;
+    handlers?: HandlerDeclaration[];                              // defaults to []
+    publishes?: (EventContract | CommandContract | RpcContract)[]; // defaults to []
+    topology?: BrokerConfig;        // Optional raw Rascal config — merged as base before derived topology
+    instanceId?: string;            // Auto-generated UUID if not provided
+    defaultTimeout?: number;        // RPC timeout in ms (defaults to 30_000)
+    validateInbound?: boolean;      // Validate incoming payloads against schemas (defaults to true)
+    validateOutbound?: boolean;     // Validate outgoing payloads against schemas (defaults to false)
+    interceptors?: Interceptor[];   // Per-message wrappers — tracing, metrics, header injection
+    delayedDelivery?: {
+        maxRetries?: number;         // Max re-publish attempts before error queue (default 5)
+        retryDelay?: number;         // ms between retry attempts (default 1000)
+    };
+}
+```
+
+---
+
+### ServiceBroker
+
+Returned by `ServiceBuilder.build()`. Extends `BrokerAsPromised` with typed outbound methods.
+
+```typescript
+interface ServiceBroker extends BrokerAsPromised {
+    publishEvent<TSchema extends ZodTypeAny>(
+        contract: EventContract<any, any, TSchema>,
+        message: z.infer<TSchema>,
+        overrides?: PublicationConfig & { delay?: number | true }
+    ): Promise<void>;
+
+    sendCommand<TSchema extends ZodTypeAny>(
+        contract: CommandContract<any, any, TSchema>,
+        message: z.infer<TSchema>,
+        overrides?: PublicationConfig & { delay?: number | true }
+    ): Promise<void>;
+
+    request<TReq extends ZodTypeAny, TRes extends ZodTypeAny>(
+        contract: RpcContract<any, any, TReq, TRes>,
+        message: z.infer<TReq>,
+        overrides?: PublicationConfig
+    ): Promise<z.infer<TRes>>;
+
+    cancelRequest(correlationId: string): boolean;
+}
+```
+
+---
+
+### RPC Wire Types
+
+These describe the envelope formats used on the wire. Most callers don't interact with them directly — they're relevant when building custom RPC infrastructure or debugging.
+
+```typescript
 interface RpcRequest {
     correlationId: string;
-    rpcName: string;
+    rpcName: string;          // "{domain}.{operationName}"
     payload: any;
-    replyTo: string;
+    replyTo: string;          // reply queue name for this instance
     headers?: Record<string, any>;
 }
 
 interface RpcResponse {
     correlationId: string;
     payload?: any;
-    error?: { code: string; message: string; details?: any };
+    error?: {
+        code: string;
+        message: string;
+        details?: any;
+    };
 }
 
 const RpcErrorCode = {
     HANDLER_ERROR: "RPC_HANDLER_ERROR",
-    TIMEOUT: "RPC_TIMEOUT",
-    CANCELLED: "RPC_CANCELLED",
+    TIMEOUT:       "RPC_TIMEOUT",
+    CANCELLED:     "RPC_CANCELLED",
 } as const;
 
-type RpcErrorCodeValue = (typeof RpcErrorCode)[keyof typeof RpcErrorCode];
+type RpcErrorCodeValue = "RPC_HANDLER_ERROR" | "RPC_TIMEOUT" | "RPC_CANCELLED";
+
+class RpcError extends Error {
+    readonly code: RpcErrorCodeValue | string;
+    constructor(message: string, code: RpcErrorCodeValue | string);
+}
 ```
+
+---
+
+### Delayed Delivery
+
+Delayed delivery is built into core. Declare `delay` on contracts in `defineDomain`, then pass `{ delay: N }` in publish overrides.
+
+#### Declaring delay support on contracts
+
+```typescript
+const OrdersDomain = defineDomain("orders", {
+    events: {
+        orderCreated: {
+            schema: z.object({ orderId: z.string() }),
+            delay: true,              // enables delay with no default
+        },
+        reminderSent: {
+            schema: z.object({ orderId: z.string() }),
+            delay: { default: 60000 }, // enables delay with 60s default
+        },
+    },
+});
+```
+
+#### Publishing with delay
+
+```typescript
+// Use the contract's default delay
+await broker.publishEvent(OrdersDomain.events.reminderSent, { orderId }, { delay: true });
+
+// Override with a specific delay in ms
+await broker.publishEvent(OrdersDomain.events.reminderSent, { orderId }, { delay: 30000 });
+```
+
+#### Configuring retry behavior
+
+```typescript
+const broker = await hoppity
+    .service("order-service", {
+        connection: { url: "amqp://localhost" },
+        handlers: [onEvent(OrdersDomain.events.reminderSent, handleReminder)],
+        publishes: [OrdersDomain.events.reminderSent],
+        delayedDelivery: {
+            maxRetries: 5,    // re-publish attempts before error queue (default 5)
+            retryDelay: 1000, // ms between retries (default 1000)
+        },
+    })
+    .build();
+```
+
+#### Delayed delivery types
+
+```typescript
+interface DelayedDeliveryEnvelope {
+    originalMessage: any;
+    originalPublication: string;
+    originalOverrides?: PublicationConfig;
+    targetDelay: number;       // ms — used as per-message TTL on the wait queue
+    createdAt: number;         // Unix timestamp (ms) when the delayed publish was initiated
+    retryCount: number;        // starts at 0
+}
+
+enum DelayedDeliveryErrorCode {
+    INVALID_DELAY = "DELAYED_DELIVERY_INVALID_DELAY",
+    QUEUE_FULL = "DELAYED_DELIVERY_QUEUE_FULL",
+    ERROR_QUEUE_PUBLISH_FAILED = "DELAYED_DELIVERY_ERROR_QUEUE_PUBLISH_FAILED",
+    MAX_RETRIES_EXCEEDED = "DELAYED_DELIVERY_MAX_RETRIES_EXCEEDED",
+    RETRY_ENQUEUE_FAILED = "DELAYED_DELIVERY_RETRY_ENQUEUE_FAILED",
+}
+
+class DelayedDeliveryError extends Error {
+    readonly code: DelayedDeliveryErrorCode;
+    readonly details?: any;
+    constructor(code: DelayedDeliveryErrorCode, message: string, details?: any);
+}
+
+type DelayConfig = true | { default: number };
+```
+
+#### Delayed delivery queue naming
+
+| Artifact | Pattern | Example |
+|----------|---------|---------|
+| Wait queue | `{domain}_{type}_{snake_name}_wait` | `orders_event_reminder_sent_wait` |
+| Ready queue | `{domain}_{type}_{snake_name}_ready` | `orders_event_reminder_sent_ready` |
+| Error queue | `{domain}_{type}_{snake_name}_errors` | `orders_event_reminder_sent_errors` |
+| Wait publication | `{domain}_{type}_{snake_name}_delayed` | `orders_event_reminder_sent_delayed` |
+
+---
+
+### ServiceBuilder
+
+```typescript
+class ServiceBuilder {
+    constructor(serviceName: string, config: ServiceConfig);
+
+    /** Adds middleware to the pipeline. Chainable. */
+    use(middleware: MiddlewareFunction): ServiceBuilder;
+
+    /** Builds the broker through all 7 phases. Returns a wired ServiceBroker. */
+    build(): Promise<ServiceBroker>;
+}
+```
+
+### Hoppity (entry point)
+
+```typescript
+interface Hoppity {
+    service(serviceName: string, config: ServiceConfig): ServiceBuilder;
+}
+
+// Default export:
+const hoppity: Hoppity;
+export default hoppity;
+```
+
+---
 
 ## Function Signatures
 
-### `@apogeelabs/hoppity`
+### `defineDomain`
 
 ```typescript
-// Default export — the entry point
-const hoppity: {
-    withTopology(topology: BrokerConfig): BuilderInterface;
-    use(middleware: MiddlewareFunction): BuilderInterface;
-};
-
-// Named exports
-class ConsoleLogger implements Logger { /* all 6 log methods */ }
-const defaultLogger: ConsoleLogger;  // Singleton instance
-```
-
-### `@apogeelabs/hoppity-rpc`
-
-```typescript
-function withRpcSupport(options: RpcMiddlewareOptions): MiddlewareFunction;
-```
-
-### `@apogeelabs/hoppity-delayed-publish`
-
-```typescript
-function withDelayedPublish(options: DelayedPublishOptions): MiddlewareFunction;
-```
-
-### `@apogeelabs/hoppity-subscriptions`
-
-```typescript
-function withSubscriptions(handlers: SubscriptionHandlers): MiddlewareFunction;
-function validateSubscriptionHandlers(
-    topology: BrokerConfig,
-    handlers: SubscriptionHandlers
-): ValidationResult;
-```
-
-### `@apogeelabs/hoppity-logger`
-
-```typescript
-function withCustomLogger(options: WithCustomLoggerOptions): MiddlewareFunction;
-```
-
-### `@apogeelabs/hoppity-contracts`
-
-```typescript
-function defineDomain<TDomain extends string, TEvents, TCommands, TRpc>(
-    domain: TDomain,
-    input: DomainDefinitionInput<TEvents, TCommands, TRpc>
+function defineDomain<
+    TDomain extends string,
+    TEvents extends EventsDefinition,
+    TCommands extends CommandsDefinition,
+    TRpc extends RpcDefinition,
+>(
+    domainName: TDomain,
+    definition: DomainDefinitionInput<TEvents, TCommands, TRpc>
 ): DomainDefinition<TDomain, TEvents, TCommands, TRpc>;
-
-function buildServiceTopology(
-    vhost: string,
-    connection: { hostname: string; user: string; password: string; port: number; vhost: string },
-    callback: (builder: TopologyBuilder) => void
-): MiddlewareFunction;
 ```
 
-### `@apogeelabs/hoppity-operations`
+- Throws if `domainName` is empty or whitespace-only.
+- All sections (`events`, `commands`, `rpc`) are optional — omit any that don't apply.
+- Returns typed contract objects for all declared operations.
+
+### `onEvent`
 
 ```typescript
-function withOperations(options: OperationsMiddlewareOptions): MiddlewareFunction;
-
 function onEvent<TSchema extends ZodTypeAny>(
     contract: EventContract<any, any, TSchema>,
-    handler: EventHandler<TSchema>
+    handler: EventHandler<TSchema>,
+    options?: HandlerOptions
 ): EventHandlerDeclaration;
+```
 
+### `onCommand`
+
+```typescript
 function onCommand<TSchema extends ZodTypeAny>(
     contract: CommandContract<any, any, TSchema>,
-    handler: CommandHandler<TSchema>
+    handler: CommandHandler<TSchema>,
+    options?: HandlerOptions
 ): CommandHandlerDeclaration;
+```
 
+### `onRpc`
+
+```typescript
 function onRpc<TReq extends ZodTypeAny, TRes extends ZodTypeAny>(
     contract: RpcContract<any, any, TReq, TRes>,
-    handler: RpcHandler<TReq, TRes>
+    handler: RpcHandler<TReq, TRes>,
+    options?: HandlerOptions
 ): RpcHandlerDeclaration;
 ```
 
-## Per-Function Usage Examples
+---
 
-### hoppity — `withTopology` + `use` + `build`
+## Naming Conventions
 
-```typescript
-import hoppity from "@apogeelabs/hoppity";
-import { BrokerConfig } from "rascal";
+Topology artifact names are derived mechanically. You don't set them — the contracts carry them.
 
-const topology: BrokerConfig = {
-    vhosts: {
-        "/": {
-            connection: {
-                hostname: "localhost",
-                user: "guest",
-                password: "guest",
-                port: 5672,
-                vhost: "/",
-            },
-            exchanges: {
-                events: { type: "topic" },
-            },
-            queues: {
-                event_queue: {},
-            },
-            bindings: {
-                event_binding: {
-                    source: "events",
-                    destination: "event_queue",
-                    bindingKey: "event.#",
-                },
-            },
-            publications: {
-                publish_event: {
-                    exchange: "events",
-                    routingKey: "event.created",
-                },
-            },
-            subscriptions: {
-                on_event: {
-                    queue: "event_queue",
-                    prefetch: 1,
-                },
-            },
-        },
-    },
-};
+| Artifact | Pattern | Example |
+|----------|---------|---------|
+| Exchange (event/command) | `{domain}` | `orders` |
+| Exchange (rpc) | `{domain}_rpc` | `orders_rpc` |
+| Routing key (event) | `{domain}.event.{snake_name}` | `orders.event.order_created` |
+| Routing key (command) | `{domain}.command.{snake_name}` | `orders.command.cancel_order` |
+| Routing key (rpc) | `{domain}.rpc.{snake_name}` | `orders.rpc.create_order` |
+| Queue | `{service}_{domain}_{type}_{snake_name}` | `catalog-service_orders_event_order_created` |
+| Publication name | `{domain}_{type}_{snake_name}` | `orders_event_order_created` |
+| Subscription name | `{domain}_{type}_{snake_name}` | `orders_event_order_created` |
+| Reply queue | `{service}_{instanceId}_reply` | `order-service_abc123_reply` |
 
-const broker = await hoppity
-    .withTopology(topology)
-    .use(someMiddleware)
-    .build();
-```
+camelCase operation names are converted to snake_case. Acronyms collapse to a single segment: `getHTTPResponse` → `get_http_response`.
 
-### hoppity — Starting without initial topology
+---
+
+## Complete Usage Example
 
 ```typescript
-// You can also start with .use() directly (topology defaults to {})
-const broker = await hoppity
-    .use(middlewareThatSetsUpTopology)
-    .use(anotherMiddleware)
-    .build();
-```
-
-### withRpcSupport
-
-```typescript
-import hoppity from "@apogeelabs/hoppity";
-import { withRpcSupport, RpcBroker } from "@apogeelabs/hoppity-rpc";
-import { randomUUID } from "crypto";
-
-const broker = await hoppity
-    .withTopology(baseTopology)
-    .use(
-        withRpcSupport({
-            serviceName: "order-service",
-            instanceId: randomUUID(),
-            rpcExchange: "rpc_requests",
-            defaultTimeout: 15_000,
-        })
-    )
-    .build() as RpcBroker;
-
-// Register an RPC handler
-broker.addRpcListener<{ orderId: string }, { status: string }>(
-    "order-service.getStatus",
-    async (request) => {
-        return { status: "shipped" };
-    }
-);
-
-// Make an RPC request to another service
-const result = await broker.request<{ userId: string }, { name: string }>(
-    "user-service.getProfile",
-    { userId: "123" }
-);
-```
-
-### withDelayedPublish
-
-```typescript
-import hoppity from "@apogeelabs/hoppity";
-import { withDelayedPublish, DelayedPublishBroker } from "@apogeelabs/hoppity-delayed-publish";
-import { randomUUID } from "crypto";
-
-const broker = await hoppity
-    .withTopology(baseTopology)
-    .use(
-        withDelayedPublish({
-            serviceName: "notification-service",
-            instanceId: randomUUID(),
-            defaultDelay: 30_000,
-            maxRetries: 5,
-            retryDelay: 1_000,
-        })
-    )
-    .build() as DelayedPublishBroker;
-
-// Publish with explicit 5-second delay
-await broker.delayedPublish("send_notification", { userId: "123" }, undefined, 5_000);
-
-// Publish with default delay (30 seconds)
-await broker.delayedPublish("send_reminder", { userId: "456" });
-```
-
-### withSubscriptions
-
-```typescript
-import hoppity from "@apogeelabs/hoppity";
-import { withSubscriptions, SubscriptionHandler } from "@apogeelabs/hoppity-subscriptions";
-
-const onOrderCreated: SubscriptionHandler = async (message, content, ackOrNack, broker) => {
-    try {
-        console.log("Order received:", content);
-        ackOrNack(); // Acknowledge
-    } catch (err) {
-        ackOrNack(err as Error); // Reject
-    }
-};
-
-const broker = await hoppity
-    .withTopology(topology) // topology must have a subscription named "on_order_created"
-    .use(
-        withSubscriptions({
-            on_order_created: onOrderCreated,
-        })
-    )
-    .build();
-```
-
-### validateSubscriptionHandlers (standalone validation)
-
-```typescript
-import { validateSubscriptionHandlers } from "@apogeelabs/hoppity-subscriptions";
-
-const result = validateSubscriptionHandlers(topology, {
-    on_order_created: handler1,
-    on_nonexistent: handler2,
-});
-
-if (!result.isValid) {
-    console.error(result.errorMessage);
-    // "Subscription validation failed: Missing subscriptions: on_nonexistent. Available subscriptions: on_order_created"
-}
-```
-
-### withCustomLogger
-
-```typescript
-import hoppity from "@apogeelabs/hoppity";
-import { withCustomLogger, Logger } from "@apogeelabs/hoppity-logger";
-import winston from "winston";
-
-// Wrap Winston to match the Logger interface
-const winstonLogger = winston.createLogger({
-    level: "info",
-    format: winston.format.json(),
-    transports: [new winston.transports.Console()],
-});
-
-const logger: Logger = {
-    silly: (msg, ...args) => winstonLogger.silly(msg, ...args),
-    debug: (msg, ...args) => winstonLogger.debug(msg, ...args),
-    info: (msg, ...args) => winstonLogger.info(msg, ...args),
-    warn: (msg, ...args) => winstonLogger.warn(msg, ...args),
-    error: (msg, ...args) => winstonLogger.error(msg, ...args),
-    critical: (msg, ...args) => winstonLogger.error(msg, ...args), // Winston has no "critical"
-};
-
-// Apply FIRST so downstream middleware can use it
-const broker = await hoppity
-    .withTopology(topology)
-    .use(withCustomLogger({ logger }))
-    .use(withRpcSupport({ serviceName: "my-svc", instanceId: "abc" }))
-    .build();
-```
-
-### withOperations (contract-driven operations)
-
-```typescript
-import hoppity from "@apogeelabs/hoppity";
-import { defineDomain, buildServiceTopology } from "@apogeelabs/hoppity-contracts";
-import {
-    withOperations,
-    onEvent,
-    onCommand,
-    onRpc,
-    OperationsBroker,
-} from "@apogeelabs/hoppity-operations";
-import { randomUUID } from "crypto";
 import { z } from "zod";
+import hoppity, { defineDomain, onEvent, onCommand, onRpc } from "@apogeelabs/hoppity";
+import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 
-// 1. Define domain contracts
-const inventory = defineDomain("donated_inventory", {
+// --- Define the domain ---
+
+const LineItemSchema = z.object({
+    productId: z.string(),
+    quantity: z.number(),
+    price: z.number(),
+});
+
+const OrdersDomain = defineDomain("orders", {
     events: {
-        created: z.object({ itemId: z.string(), name: z.string() }),
+        orderCreated: z.object({
+            orderId: z.string(),
+            items: z.array(LineItemSchema),
+        }),
+        orderCancelled: z.object({
+            orderId: z.string(),
+            reason: z.string(),
+        }),
     },
     commands: {
-        reserveItem: z.object({ itemId: z.string(), quantity: z.number() }),
+        cancelOrder: z.object({ orderId: z.string() }),
     },
     rpc: {
-        getQuote: {
-            request: z.object({ itemId: z.string() }),
-            response: z.object({ price: z.number(), currency: z.string() }),
+        createOrder: {
+            request: z.object({ items: z.array(LineItemSchema) }),
+            response: z.object({ orderId: z.string(), total: z.number() }),
+        },
+        getOrderSummary: {
+            request: z.object({ orderId: z.string() }),
+            response: z.object({ orderId: z.string(), status: z.string(), total: z.number() }),
         },
     },
 });
 
-// 2. Build topology from contracts
-const connection = {
-    hostname: "localhost",
-    user: "guest",
-    password: "guest",
-    port: 5672,
-    vhost: "/",
-};
+// --- Define handlers ---
 
-const topologyMiddleware = buildServiceTopology("/", connection, (builder) => {
-    builder
-        .publishesEvent(inventory.events.created)
-        .handlesCommand(inventory.commands.reserveItem)
-        .respondsToRpc(inventory.rpc.getQuote);
-});
-
-// 3. Wire handlers + build broker
-const broker = await hoppity
-    .use(topologyMiddleware)
-    .use(
-        withOperations({
-            serviceName: "inventory-service",
-            instanceId: randomUUID(),
-            handlers: [
-                onCommand(inventory.commands.reserveItem, async (content, { broker }) => {
-                    console.log("Reserving item:", content.itemId);
-                }),
-                onRpc(inventory.rpc.getQuote, async (request) => {
-                    return { price: 42.0, currency: "USD" };
-                }),
-            ],
-        })
-    )
-    .build() as OperationsBroker;
-
-// 4. Use typed broker methods
-await broker.publishEvent(inventory.events.created, { itemId: "abc", name: "Widget" });
-await broker.sendCommand(inventory.commands.reserveItem, { itemId: "abc", quantity: 1 });
-const quote = await broker.request(inventory.rpc.getQuote, { itemId: "abc" });
-console.log(quote.price); // 42.0
-```
-
-## Writing Custom Middleware
-
-### Middleware Function Signature
-
-```typescript
-import { MiddlewareFunction, MiddlewareResult, MiddlewareContext } from "@apogeelabs/hoppity";
-import { BrokerConfig, BrokerAsPromised } from "rascal";
-
-const myMiddleware: MiddlewareFunction = (
-    topology: BrokerConfig,
-    context: MiddlewareContext
-): MiddlewareResult => {
-    // 1. Read/modify topology
-    const modified = structuredClone(topology);
-    modified.vhosts ??= {};
-    modified.vhosts["/"] ??= {};
-    modified.vhosts["/"].exchanges ??= {};
-    modified.vhosts["/"].exchanges["my-exchange"] = { type: "topic" };
-
-    // 2. Share data with downstream middleware via context.data
-    context.data.myConfig = { exchangeName: "my-exchange" };
-
-    // 3. Use the logger
-    context.logger.info("My middleware executed");
-
-    // 4. Return modified topology + optional lifecycle hook
-    return {
-        topology: modified,
-        onBrokerCreated: async (broker: BrokerAsPromised) => {
-            // Runs AFTER broker is created, BEFORE build() resolves
-            const sub = await broker.subscribe("my-subscription");
-            sub.on("message", (msg, content, ackOrNack) => {
-                // handle messages
-                ackOrNack();
-            });
-        },
-    };
-};
-```
-
-### Middleware Factory Pattern (parameterized middleware)
-
-```typescript
-interface MyMiddlewareOptions {
-    exchangeName: string;
-    routingKey: string;
-}
-
-function withMyFeature(options: MyMiddlewareOptions): MiddlewareFunction {
-    return (topology: BrokerConfig, context: MiddlewareContext): MiddlewareResult => {
-        const modified = structuredClone(topology);
-        // ... modify topology using options ...
-        return {
-            topology: modified,
-            onBrokerCreated: async (broker) => {
-                // ... setup using options and broker ...
-            },
-        };
-    };
-}
-
-// Usage
-const broker = await hoppity
-    .withTopology(base)
-    .use(withMyFeature({ exchangeName: "events", routingKey: "event.#" }))
-    .build();
-```
-
-### Middleware Lifecycle
-
-1. All middleware functions execute **sequentially** during `.build()`
-2. Each receives the **cumulative** topology (modified by all prior middleware)
-3. `context` is **shared** — mutations to `context.data` are visible downstream
-4. `onBrokerCreated` callbacks execute **sequentially after** broker creation
-5. If a callback fails, the broker is **shut down** before the error propagates
-
-## Canonical Examples
-
-### Example 1: Basic Pub/Sub with Custom Logger and Subscriptions
-
-```typescript
-import hoppity, { MiddlewareContext } from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
-import { withSubscriptions, SubscriptionHandler } from "@apogeelabs/hoppity-subscriptions";
-import { BrokerConfig, BrokerAsPromised } from "rascal";
-
-const topology: BrokerConfig = {
-    vhosts: {
-        "/": {
-            connection: {
-                hostname: "localhost",
-                user: "guest",
-                password: "guest",
-                port: 5672,
-                vhost: "/",
-            },
-            exchanges: {
-                events: { type: "topic" },
-            },
-            queues: {
-                event_queue: {},
-            },
-            bindings: {
-                event_binding: {
-                    source: "events",
-                    destination: "event_queue",
-                    bindingKey: "event.#",
-                },
-            },
-            publications: {
-                publish_event: {
-                    exchange: "events",
-                    routingKey: "event.created",
-                },
-            },
-            subscriptions: {
-                on_event: {
-                    queue: "event_queue",
-                    prefetch: 1,
-                },
-            },
-        },
-    },
-};
-
-const handleEvent: SubscriptionHandler = async (message, content, ackOrNack, broker) => {
-    console.log("Received event:", content);
-    ackOrNack();
-};
-
-const broker = await hoppity
-    .withTopology(topology)
-    .use(withCustomLogger({ logger: myLogger }))
-    .use(withSubscriptions({ on_event: handleEvent }))
-    .build();
-
-// Publish a message
-const publication = await broker.publish("publish_event", { type: "user.created", userId: "123" });
-publication.on("error", console.error);
-
-// Graceful shutdown
-process.on("SIGTERM", async () => {
-    await broker.shutdown();
-});
-```
-
-### Example 2: RPC Between Two Services
-
-```typescript
-// --- Handler Service ---
-import hoppity from "@apogeelabs/hoppity";
-import { withRpcSupport, RpcBroker } from "@apogeelabs/hoppity-rpc";
-import { randomUUID } from "crypto";
-
-const handlerBroker = await hoppity
-    .withTopology(baseTopology)
-    .use(
-        withRpcSupport({
-            serviceName: "user-service",
-            instanceId: randomUUID(),
-        })
-    )
-    .build() as RpcBroker;
-
-handlerBroker.addRpcListener<{ userId: string }, { name: string; email: string }>(
-    "user-service.getProfile",
-    async (request) => {
-        // Look up user by ID
-        return { name: "Jane Doe", email: "jane@example.com" };
+const createOrderHandler = onRpc(
+    OrdersDomain.rpc.createOrder,
+    async (request, { broker }) => {
+        const order = await orderStore.create(request);
+        await broker.publishEvent(OrdersDomain.events.orderCreated, {
+            orderId: order.id,
+            items: order.items,
+        });
+        return { orderId: order.id, total: order.total };
     }
 );
 
-// --- Requester Service ---
-const requesterBroker = await hoppity
-    .withTopology(baseTopology)
-    .use(
-        withRpcSupport({
-            serviceName: "api-gateway",
-            instanceId: randomUUID(),
-        })
-    )
-    .build() as RpcBroker;
-
-const profile = await requesterBroker.request<{ userId: string }, { name: string; email: string }>(
-    "user-service.getProfile",
-    { userId: "42" }
+const cancelOrderHandler = onCommand(
+    OrdersDomain.commands.cancelOrder,
+    async ({ orderId }, { broker }) => {
+        const order = await orderStore.cancel(orderId);
+        await broker.publishEvent(OrdersDomain.events.orderCancelled, {
+            orderId: order.id,
+            reason: "Requested by customer",
+        });
+    },
+    {
+        queueType: "quorum",
+        redeliveries: { limit: 10 },
+        deadLetter: { exchange: "order-service-dlx" },
+    }
 );
-console.log(profile.name); // "Jane Doe"
-```
 
-### Example 3: Delayed Publishing with Retry
-
-```typescript
-import hoppity from "@apogeelabs/hoppity";
-import { withDelayedPublish, DelayedPublishBroker } from "@apogeelabs/hoppity-delayed-publish";
-import { withSubscriptions, SubscriptionHandler } from "@apogeelabs/hoppity-subscriptions";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
-import { randomUUID } from "crypto";
-
-const handleNotification: SubscriptionHandler = async (message, content, ackOrNack) => {
-    console.log("Sending notification:", content);
-    ackOrNack();
-};
+// --- Build the service ---
 
 const broker = await hoppity
-    .withTopology(topology)
-    .use(withCustomLogger({ logger: myLogger }))
-    .use(
-        withDelayedPublish({
-            serviceName: "notification-svc",
-            instanceId: randomUUID(),
-            defaultDelay: 60_000,     // 1 minute default delay
-            maxRetries: 3,
-            retryDelay: 2_000,
-        })
-    )
-    .use(withSubscriptions({ on_notification: handleNotification }))
-    .build() as DelayedPublishBroker;
+    .service("order-service", {
+        connection: {
+            url: process.env.RABBITMQ_URL ?? "amqp://localhost",
+            vhost: "/",
+            options: { heartbeat: 10 },
+            retry: { factor: 2, min: 1000, max: 5000 },
+        },
+        handlers: [
+            createOrderHandler,
+            cancelOrderHandler,
+        ],
+        publishes: [
+            OrdersDomain.events.orderCreated,
+            OrdersDomain.events.orderCancelled,
+        ],
+    })
+    .use(withCustomLogger({ logger }))
+    .build();
 
-// Schedule a notification for 5 minutes from now
-await broker.delayedPublish(
-    "send_notification",
-    { userId: "123", message: "Your order has shipped!" },
-    undefined,
-    300_000
-);
+// --- Use the broker ---
+
+await broker.publishEvent(OrdersDomain.events.orderCreated, {
+    orderId: "ord-123",
+    items: [{ productId: "prod-1", quantity: 2, price: 19.99 }],
+});
+
+const order = await broker.request(OrdersDomain.rpc.createOrder, {
+    items: [{ productId: "prod-1", quantity: 1, price: 9.99 }],
+});
+// order is typed as { orderId: string; total: number }
+
+const cancelled = broker.cancelRequest(correlationId); // boolean
+
+await broker.shutdown();
 ```
 
-### Example 4: Composing All Middleware
+---
+
+## RPC-Only Caller Example
+
+A service that calls RPC but doesn't handle any RPC operations itself:
 
 ```typescript
-import hoppity from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
-import { withRpcSupport, RpcBroker } from "@apogeelabs/hoppity-rpc";
-import { withDelayedPublish, DelayedPublishBroker } from "@apogeelabs/hoppity-delayed-publish";
-import { withSubscriptions } from "@apogeelabs/hoppity-subscriptions";
-import { randomUUID } from "crypto";
-
 const broker = await hoppity
-    .withTopology(topology)
-    .use(withCustomLogger({ logger }))            // 1. Logger first
-    .use(withRpcSupport({                          // 2. RPC support
-        serviceName: "order-service",
-        instanceId: randomUUID(),
-    }))
-    .use(withDelayedPublish({                      // 3. Delayed publish
-        serviceName: "order-service",
-        instanceId: randomUUID(),
-    }))
-    .use(withSubscriptions({                       // 4. Subscriptions last
-        on_order_created: handleOrder,
-    }))
-    .build() as RpcBroker & DelayedPublishBroker;
+    .service("gateway-service", {
+        connection: { url: "amqp://localhost" },
+        publishes: [
+            OrdersDomain.rpc.createOrder,       // declares outbound RPC call
+            OrdersDomain.rpc.getOrderSummary,
+        ],
+        // no handlers — this service only calls, never responds
+    })
+    .build();
 
-// Now broker has .request(), .addRpcListener(), and .delayedPublish()
+const result = await broker.request(OrdersDomain.rpc.createOrder, { items });
 ```
 
-## Common Mistakes / Do NOT Do This
+---
 
-### Wrong: Importing from sub-paths
+## Escape Hatch: Raw Topology Only
+
+For services not using contracts, or for one-off infrastructure that can't be derived:
 
 ```typescript
-// ❌ WRONG — no deep imports exist
-import { RascalBuilder } from "@apogeelabs/hoppity/dist/RascalBuilder";
-import { setupRpcBroker } from "@apogeelabs/hoppity-rpc/dist/setupRpcBroker";
-import { handleReadyMessage } from "@apogeelabs/hoppity-delayed-publish/dist/handleReadyMessage";
-
-// ✅ CORRECT — always import from package root
-import hoppity from "@apogeelabs/hoppity";
-import { withRpcSupport } from "@apogeelabs/hoppity-rpc";
-import { withDelayedPublish } from "@apogeelabs/hoppity-delayed-publish";
+const broker = await hoppity
+    .service("legacy-service", {
+        connection: { url: "amqp://localhost" },
+        topology: existingRascalConfig, // raw BrokerConfig, merged as base
+        // handlers and publishes default to [] — no topology derivation
+    })
+    .build();
 ```
 
-### Wrong: Using `hoppity` as a constructor
+You can also combine raw topology with derived topology. The raw config is the base; derived topology layers on top:
 
 ```typescript
-// ❌ WRONG — hoppity is a plain object, not a class
-const builder = new hoppity();
-const builder = new Hoppity();
-
-// ✅ CORRECT — use the static methods
-const builder = hoppity.withTopology(config);
-const builder = hoppity.use(middleware);
+const broker = await hoppity
+    .service("order-service", {
+        connection: { url: "amqp://localhost" },
+        handlers: [cancelOrderHandler],
+        publishes: [OrdersDomain.events.orderCancelled],
+        topology: {
+            // DLX exchange not derived automatically — add it manually
+            vhosts: {
+                "/": {
+                    exchanges: { "order-service-dlx": { type: "topic" } },
+                },
+            },
+        },
+    })
+    .build();
 ```
 
-### Wrong: Returning Promise from middleware function
+---
+
+## Middleware API
+
+Middleware functions see the complete derived + merged topology before the broker is created. They can modify it further and optionally register a post-creation callback.
 
 ```typescript
-// ❌ WRONG — middleware functions are synchronous
-const myMiddleware: MiddlewareFunction = async (topology, context) => {
-    const data = await fetchSomething(); // NO async in middleware body
-    return { topology };
-};
+const auditMiddleware: MiddlewareFunction = (topology, context) => {
+    context.logger.info(`[audit] Building broker for service: ${context.serviceName}`);
+    context.data.auditEnabled = true;
 
-// ✅ CORRECT — do async work in onBrokerCreated
-const myMiddleware: MiddlewareFunction = (topology, context) => {
     return {
-        topology,
+        topology,   // pass through unchanged
         onBrokerCreated: async (broker) => {
-            const data = await fetchSomething(); // Async work goes here
+            // broker is fully wired here — handlers and outbound methods are attached
+            context.logger.info("[audit] Broker is live");
         },
     };
 };
-```
 
-### Wrong: Mutating topology in-place
-
-```typescript
-// ❌ WRONG — don't mutate the received topology object
-const myMiddleware: MiddlewareFunction = (topology, context) => {
-    topology.vhosts["/"].exchanges["new"] = { type: "topic" }; // Mutation!
-    return { topology };
-};
-
-// ✅ CORRECT — clone first, then modify
-const myMiddleware: MiddlewareFunction = (topology, context) => {
-    const modified = structuredClone(topology);
-    modified.vhosts ??= {};
-    modified.vhosts["/"] ??= {};
-    modified.vhosts["/"].exchanges ??= {};
-    modified.vhosts["/"].exchanges["new"] = { type: "topic" };
-    return { topology: modified };
-};
-```
-
-### Wrong: Forgetting `.build()`
-
-```typescript
-// ❌ WRONG — this is a BuilderInterface, not a broker
-const broker = hoppity.withTopology(topology).use(middleware);
-await broker.publish("foo", {}); // TypeError: broker.publish is not a function
-
-// ✅ CORRECT — call .build() to get the broker
-const broker = await hoppity.withTopology(topology).use(middleware).build();
-await broker.publish("foo", {});
-```
-
-### Wrong: Accessing broker methods without casting
-
-```typescript
-// ❌ WRONG — TypeScript won't know about .request() or .delayedPublish()
-const broker = await hoppity.withTopology(t).use(withRpcSupport(opts)).build();
-broker.request("foo", {}); // Property 'request' does not exist
-
-// ✅ CORRECT — cast to the extended broker type
-const broker = await hoppity.withTopology(t).use(withRpcSupport(opts)).build() as RpcBroker;
-broker.request("foo", {});
-
-// Or for multiple middleware:
 const broker = await hoppity
-    .withTopology(t)
-    .use(withRpcSupport(opts))
-    .use(withDelayedPublish(opts2))
-    .build() as RpcBroker & DelayedPublishBroker;
-```
-
-### Wrong: Putting withCustomLogger after other middleware
-
-```typescript
-// ❌ WRONG — middleware before withCustomLogger won't use the custom logger
-const broker = await hoppity
-    .withTopology(topology)
-    .use(withRpcSupport(opts))         // Uses default ConsoleLogger
-    .use(withCustomLogger({ logger })) // Too late for RPC middleware
-    .build();
-
-// ✅ CORRECT — logger first
-const broker = await hoppity
-    .withTopology(topology)
-    .use(withCustomLogger({ logger })) // All subsequent middleware use this logger
-    .use(withRpcSupport(opts))
+    .service("my-service", { connection: { url: "amqp://localhost" } })
+    .use(withCustomLogger({ logger })) // should go first
+    .use(auditMiddleware)
     .build();
 ```
 
-### Wrong: Subscription handler key doesn't match topology
+### `withCustomLogger` (`@apogeelabs/hoppity-logger`)
 
 ```typescript
-// ❌ WRONG — handler key must exactly match a subscription name in the topology
-const broker = await hoppity
-    .withTopology(topology) // has subscription named "on_order_created"
-    .use(withSubscriptions({
-        order_created: handler, // Wrong key! Should be "on_order_created"
-    }))
-    .build();
-// Error: "Subscription validation failed: Missing subscriptions: order_created"
-
-// ✅ CORRECT — key matches exactly
-    .use(withSubscriptions({
-        on_order_created: handler,
-    }))
-```
-
-### Wrong: SubscriptionHandler with wrong argument count
-
-```typescript
-// ❌ WRONG — missing the broker (4th argument)
-const handler: SubscriptionHandler = (message, content, ackOrNack) => {
-    // Missing broker parameter
-};
-
-// ✅ CORRECT — all 4 parameters
-const handler: SubscriptionHandler = (message, content, ackOrNack, broker) => {
-    ackOrNack();
-};
-```
-
-### Wrong: Not handling errors in subscription handlers
-
-```typescript
-// ❌ WRONG — unhandled error will nack with default behavior
-const handler: SubscriptionHandler = async (message, content, ackOrNack, broker) => {
-    const result = await processOrder(content); // If this throws, message is nacked
-    // but you get no control over the error response
-};
-
-// ✅ CORRECT — explicit error handling
-const handler: SubscriptionHandler = async (message, content, ackOrNack, broker) => {
-    try {
-        const result = await processOrder(content);
-        ackOrNack();
-    } catch (err) {
-        console.error("Failed to process:", err);
-        ackOrNack(err as Error, { strategy: "nack", requeue: false });
-    }
-};
-```
-
-## Complete Import Reference
-
-Every valid import path — there are **NO deep import paths**.
-
-```typescript
-// @apogeelabs/hoppity
-import hoppity from "@apogeelabs/hoppity";                          // Default: builder entry point
-import type { MiddlewareFunction } from "@apogeelabs/hoppity";
-import type { MiddlewareContext } from "@apogeelabs/hoppity";
-import type { MiddlewareResult } from "@apogeelabs/hoppity";
-import type { BuilderInterface } from "@apogeelabs/hoppity";
-import type { BrokerCreatedCallback } from "@apogeelabs/hoppity";
-import type { BrokerWithExtensions } from "@apogeelabs/hoppity";
-import type { Hoppity } from "@apogeelabs/hoppity";
-import type { Logger } from "@apogeelabs/hoppity";
-import { ConsoleLogger } from "@apogeelabs/hoppity";
-import { defaultLogger } from "@apogeelabs/hoppity";
-
-// @apogeelabs/hoppity-rpc
-import { withRpcSupport } from "@apogeelabs/hoppity-rpc";
-import { RpcErrorCode } from "@apogeelabs/hoppity-rpc";
-import type { RpcMiddlewareOptions } from "@apogeelabs/hoppity-rpc";
-import type { RpcRequest } from "@apogeelabs/hoppity-rpc";
-import type { RpcResponse } from "@apogeelabs/hoppity-rpc";
-import type { RpcBroker } from "@apogeelabs/hoppity-rpc";
-import type { Logger } from "@apogeelabs/hoppity-rpc";              // Re-exported from core
-
-// @apogeelabs/hoppity-delayed-publish
-import { withDelayedPublish } from "@apogeelabs/hoppity-delayed-publish";
-import { DelayedPublishError } from "@apogeelabs/hoppity-delayed-publish";
-import { DelayedPublishErrorCode } from "@apogeelabs/hoppity-delayed-publish";
-import type { DelayedPublishOptions } from "@apogeelabs/hoppity-delayed-publish";
-import type { DelayedMessage } from "@apogeelabs/hoppity-delayed-publish";
-import type { DelayedPublishBroker } from "@apogeelabs/hoppity-delayed-publish";
-
-// @apogeelabs/hoppity-subscriptions
-import { withSubscriptions } from "@apogeelabs/hoppity-subscriptions";
-import { validateSubscriptionHandlers } from "@apogeelabs/hoppity-subscriptions";
-import type { SubscriptionHandler } from "@apogeelabs/hoppity-subscriptions";
-import type { SubscriptionHandlers } from "@apogeelabs/hoppity-subscriptions";
-import type { ValidationResult } from "@apogeelabs/hoppity-subscriptions";
-
-// @apogeelabs/hoppity-logger
 import { withCustomLogger } from "@apogeelabs/hoppity-logger";
-import type { WithCustomLoggerOptions } from "@apogeelabs/hoppity-logger";
-import type { Logger } from "@apogeelabs/hoppity-logger";           // Re-exported from core
 
-// @apogeelabs/hoppity-contracts
-import { defineDomain } from "@apogeelabs/hoppity-contracts";
-import { buildServiceTopology } from "@apogeelabs/hoppity-contracts";
-import { withOutboundExchange } from "@apogeelabs/hoppity-contracts";
-import type { EventContract } from "@apogeelabs/hoppity-contracts";
-import type { CommandContract } from "@apogeelabs/hoppity-contracts";
-import type { RpcContract } from "@apogeelabs/hoppity-contracts";
-import type { DomainDefinition } from "@apogeelabs/hoppity-contracts";
-import type { DomainDefinitionInput } from "@apogeelabs/hoppity-contracts";
-import type { TopologyBuilder } from "@apogeelabs/hoppity-contracts";
-import type { HandlerOptions } from "@apogeelabs/hoppity-contracts";
-
-// @apogeelabs/hoppity-operations
-import { withOperations } from "@apogeelabs/hoppity-operations";
-import { onEvent } from "@apogeelabs/hoppity-operations";
-import { onCommand } from "@apogeelabs/hoppity-operations";
-import { onRpc } from "@apogeelabs/hoppity-operations";
-import { RpcErrorCode } from "@apogeelabs/hoppity-operations";
-import type { OperationsBroker } from "@apogeelabs/hoppity-operations";
-import type { OperationsMiddlewareOptions } from "@apogeelabs/hoppity-operations";
-import type { HandlerContext } from "@apogeelabs/hoppity-operations";
-import type { EventHandler } from "@apogeelabs/hoppity-operations";
-import type { CommandHandler } from "@apogeelabs/hoppity-operations";
-import type { RpcHandler } from "@apogeelabs/hoppity-operations";
-import type { HandlerDeclaration } from "@apogeelabs/hoppity-operations";
-import type { EventHandlerDeclaration } from "@apogeelabs/hoppity-operations";
-import type { CommandHandlerDeclaration } from "@apogeelabs/hoppity-operations";
-import type { RpcHandlerDeclaration } from "@apogeelabs/hoppity-operations";
-import type { RpcRequest } from "@apogeelabs/hoppity-operations";
-import type { RpcResponse } from "@apogeelabs/hoppity-operations";
-import type { RpcErrorCodeValue } from "@apogeelabs/hoppity-operations";
+const middleware = withCustomLogger({ logger: myWinstonLogger });
 ```
 
-⚠️ There are **NO** other valid import paths. Do not attempt to import from `dist/`, sub-modules, or internal files.
+Sets `context.logger` so all subsequent middleware and the framework itself use the custom logger. Should be the first `.use()` call.
 
-## Established Patterns
+---
 
-### Singleton Broker Pattern
+## Interceptor API
 
-Each service typically creates one broker instance and reuses it:
+Interceptors wrap handler execution (inbound) and publish calls (outbound) at runtime. They are the extension point for tracing, metrics, and any cross-cutting concern that needs to observe or modify per-message processing.
+
+Unlike middleware (which runs once at build time), interceptors run on every message.
+
+### Interceptor Type Definitions
 
 ```typescript
-let brokerInstance: BrokerAsPromised | null = null;
+/**
+ * A unified interceptor that can wrap inbound handler execution,
+ * outbound publish calls, or both. Either direction is optional —
+ * an interceptor with only `inbound` or only `outbound` is valid.
+ *
+ * Interceptors are configuration, not runtime state. They are wired
+ * at build time and cannot be added or removed after the broker is created.
+ */
+interface Interceptor {
+    /** Name for logging and debugging — required, must be non-empty */
+    name: string;
+    /** Wraps handler execution for events, commands, and RPC responders */
+    inbound?: InboundWrapper;
+    /** Wraps publish calls for publishEvent, sendCommand, and request */
+    outbound?: OutboundWrapper;
+}
 
-export async function getBroker(): Promise<BrokerAsPromised> {
-    if (brokerInstance) return brokerInstance;
-    brokerInstance = await hoppity.withTopology(topology).use(middleware).build();
-    return brokerInstance;
+/**
+ * Wraps a handler function. Receives the original handler and per-message
+ * metadata. Returns a replacement handler with the same signature.
+ *
+ * Metadata is built per-message because headers vary per message.
+ */
+type InboundWrapper = (
+    handler: (payload: any, context: HandlerContext) => Promise<any>,
+    metadata: InboundMetadata
+) => (payload: any, context: HandlerContext) => Promise<any>;
+
+/**
+ * Wraps a publish function. Receives the inner publish and metadata about
+ * the contract being published to. Returns a replacement publish with the
+ * same signature.
+ */
+type OutboundWrapper = (
+    publish: (message: any, overrides?: PublicationConfig) => Promise<any>,
+    metadata: OutboundMetadata
+) => (message: any, overrides?: PublicationConfig) => Promise<any>;
+
+/**
+ * Metadata available to inbound wrappers when a message is received.
+ */
+interface InboundMetadata {
+    /** The contract this handler is bound to */
+    contract: EventContract | CommandContract | RpcContract;
+    /** Operation kind */
+    kind: "event" | "command" | "rpc";
+    /** The service name from hoppity.service() */
+    serviceName: string;
+    /** AMQP message surface — headers for trace context extraction, properties for message metadata */
+    message: {
+        headers: Record<string, any>;
+        properties: Record<string, any>;
+    };
+}
+
+/**
+ * Metadata available to outbound wrappers when a message is published.
+ * Constructed per-call because the contract is only known at call time.
+ */
+interface OutboundMetadata {
+    /** The contract being published to */
+    contract: EventContract | CommandContract | RpcContract;
+    /** Operation kind */
+    kind: "event" | "command" | "rpc";
+    /** The service name from hoppity.service() */
+    serviceName: string;
 }
 ```
 
-### Graceful Shutdown
+### Configuration
+
+Pass interceptors in `ServiceConfig.interceptors`. They apply to all handlers and all outbound calls for the service.
 
 ```typescript
-async function shutdown(broker: BrokerAsPromised): Promise<void> {
-    await broker.shutdown();
-    process.exit(0);
-}
-
-process.on("SIGTERM", () => shutdown(broker));
-process.on("SIGINT", () => shutdown(broker));
+const broker = await hoppity
+    .service("order-service", {
+        connection: { url: process.env.RABBITMQ_URL! },
+        handlers: [createOrderHandler, cancelOrderHandler],
+        publishes: [OrdersDomain.events.orderCreated],
+        interceptors: [withTracing, withMetrics],
+    })
+    .use(withCustomLogger({ logger }))
+    .build();
 ```
 
-### Topology Separation
+### Composition Order
 
-Define topology in a dedicated file, separate from broker creation:
+For `interceptors: [A, B]`, the call chain is `A → B → handler` (inbound) and `A → B → rascal publish` (outbound). First interceptor declared is outermost — it sees the call first on the way in and last on the way out.
+
+Inbound wrappers are composed per-message (metadata includes per-message headers). Outbound wrappers are composed per-publish-call (metadata derives from the contract argument). The per-call overhead is negligible — wrapping 1-3 functions is nanoseconds relative to AMQP I/O.
+
+### One-Directional Interceptors
+
+An interceptor that only declares `inbound` or only `outbound` is valid. The framework skips the missing direction.
 
 ```typescript
-// messaging/topology.ts
-export const topology: BrokerConfig = { /* ... */ };
+// Inbound-only: log handler execution time
+const withHandlerTiming: Interceptor = {
+    name: "handler-timing",
+    inbound: (handler, meta) => async (payload, ctx) => {
+        const start = performance.now();
+        try {
+            return await handler(payload, ctx);
+        } finally {
+            console.log(`${meta.contract._name} took ${performance.now() - start}ms`);
+        }
+    },
+};
 
-// messaging/broker.ts
-import { topology } from "./topology";
-export async function createBroker() {
-    return hoppity.withTopology(topology).use(...).build();
+// Outbound-only: inject correlation headers on every publish
+const withCorrelationHeaders: Interceptor = {
+    name: "correlation-headers",
+    outbound: (publish, meta) => async (message, overrides) => {
+        return publish(message, {
+            ...overrides,
+            options: {
+                ...overrides?.options,
+                headers: {
+                    ...overrides?.options?.headers,
+                    "x-source-service": meta.serviceName,
+                    "x-source-domain": meta.contract._domain,
+                },
+            },
+        });
+    },
+};
+```
+
+### RPC and Interceptors
+
+Both directions apply to RPC:
+
+- **Inbound (responder):** RPC handlers are wrapped identically to event/command handlers. `meta.kind` is `"rpc"`. The wrapper receives the unwrapped request payload (after `RpcRequest` envelope extraction).
+- **Outbound (caller):** `broker.request()` is wrapped identically to `publishEvent`/`sendCommand`. `meta.kind` is `"rpc"`.
+
+RPC response processing (reply queue subscription, correlation resolution) is not intercepted — that is internal framework plumbing.
+
+### `hoppity-open-telemetry` Package
+
+```typescript
+import { withTracing, withMetrics } from "@apogeelabs/hoppity-open-telemetry";
+import type { TracingOptions, MetricsOptions } from "@apogeelabs/hoppity-open-telemetry";
+```
+
+Both `withTracing` and `withMetrics` are dual-use: they can be placed in the `interceptors` array directly (uses defaults) or called as a factory to supply options.
+
+```typescript
+// Direct use — default tracer/meter name "hoppity"
+interceptors: [withTracing, withMetrics]
+
+// Factory use — custom names and options
+interceptors: [
+    withTracing({ tracerName: "order-service", spanPrefix: "msg" }),
+    withMetrics({ meterName: "order-service", histogramBuckets: [5, 10, 25, 50, 100, 250] }),
+]
+```
+
+#### `TracingOptions`
+
+```typescript
+interface TracingOptions {
+    /**
+     * Name passed to opentelemetry.trace.getTracer().
+     * Defaults to "hoppity".
+     */
+    tracerName?: string;
+    /**
+     * Prefix prepended to span names, separated by a colon.
+     * Defaults to the operation kind ("event", "command", "rpc", or "publish").
+     * Supply this to namespace spans when multiple services share a tracer.
+     */
+    spanPrefix?: string;
 }
 ```
 
-### Middleware Ordering Convention
+#### `MetricsOptions`
 
+```typescript
+interface MetricsOptions {
+    /**
+     * Name passed to opentelemetry.metrics.getMeter().
+     * Defaults to "hoppity".
+     */
+    meterName?: string;
+    /**
+     * Explicit histogram bucket boundaries for duration histograms (milliseconds).
+     * Omit to use the OTel SDK default boundaries.
+     */
+    histogramBuckets?: number[];
+}
 ```
-1. withCustomLogger       — Logger first (so all others can use it)
-2. buildServiceTopology   — Contract-driven topology generation (from hoppity-contracts)
-3. withRpcSupport         — Topology additions (legacy, use withOperations for new code)
-4. withDelayedPublish     — Topology additions
-5. withOperations         — Contract-driven handlers + typed broker methods (after topology)
-6. withSubscriptions      — Validates + wires (should be last, after topology is finalized)
-7. Custom middleware       — Your own middleware, ordered by dependency
+
+#### `withTracing` behaviour
+
+- **Inbound:** extracts parent trace context from `meta.message.headers` via `propagation.extract()`. Starts an active span named `{spanPrefix}:{domain}.{operationName}` where `spanPrefix` defaults to `meta.kind` (e.g. `"event"`, `"command"`, `"rpc"`). Sets semantic attributes (see table below). Records exceptions and sets `SpanStatusCode.ERROR` on failure; sets `SpanStatusCode.OK` on success.
+- **Outbound:** starts an active span named `{spanPrefix}:{domain}.{operationName}` where `spanPrefix` defaults to `"publish"`. Injects the current trace context into AMQP message headers via `propagation.inject()` so downstream consumers can link their spans as children. Records exceptions on failure.
+
+Span name examples with defaults:
+- `"event:orders.orderCreated"`
+- `"command:orders.cancelOrder"`
+- `"rpc:orders.createOrder"`
+- `"publish:orders.orderCreated"`
+
+#### `withMetrics` behaviour
+
+- **Inbound:** increments `hoppity.handler.count`, records `hoppity.handler.duration` histogram (ms) in `finally`, increments `hoppity.handler.errors` on failure.
+- **Outbound:** increments `hoppity.publish.count`, records `hoppity.publish.duration` histogram (ms) in `finally`, increments `hoppity.publish.errors` on failure.
+
+OTel meter instruments are initialised lazily on first message — the SDK and exporter need not be configured at import time.
+
+#### Attributes
+
+Both interceptors attach the same attribute set, derived from `InboundMetadata` / `OutboundMetadata`:
+
+| Attribute | Value | Notes |
+|-----------|-------|-------|
+| `messaging.system` | `"rabbitmq"` | OTel semantic convention |
+| `messaging.operation.type` | `"receive"` (inbound) / `"publish"` (outbound) | OTel semantic convention |
+| `messaging.destination.name` | `contract.exchange` | The RabbitMQ exchange name |
+| `hoppity.domain` | `contract._domain` | e.g. `"orders"` |
+| `hoppity.operation` | `contract._name` | e.g. `"orderCreated"` |
+| `hoppity.kind` | `meta.kind` | `"event"`, `"command"`, or `"rpc"` |
+| `service.name` | `meta.serviceName` | The name passed to `hoppity.service()` |
+
+Requires `@opentelemetry/api@^1.9.0` as a peer dependency. The caller provides the SDK, exporter, and SDK configuration — this package only calls the OTel API surface.
+
+---
+
+## Middleware vs Interceptors
+
+These are different mechanisms. Do not conflate them.
+
+| | Middleware (`.use()`) | Interceptors (`ServiceConfig.interceptors`) |
+|---|---|---|
+| When | Before broker creation (build time) | During message processing (runtime) |
+| What | Modifies topology, lifecycle hooks | Wraps handler/publish execution |
+| Scope | Service-level, once | Per-message |
+| Examples | Custom logger, topology augmentation (DLX exchanges, shovel config) | Tracing, metrics, header injection |
+| API | `(topology, context) => MiddlewareResult` | `(handler/publish, metadata) => wrappedHandler/publish` |
+
+A concern belongs in middleware if it modifies the broker's topology or needs to run a lifecycle hook after the broker is created. It belongs in an interceptor if it needs to observe or decorate individual message operations at runtime.
+
+---
+
+## Build Phases (what happens inside `.build()`)
+
+1. **Derive topology** — `deriveTopology(serviceName, handlers, publishes, connection, instanceId)` generates Rascal `BrokerConfig` from all handler and publish declarations.
+2. **Merge topology** — `mergeTopology(rawTopology, derived)` merges the optional raw `topology` from `ServiceConfig` (as base) with the derived config. Derived config wins on conflicts.
+3. **Middleware pipeline** — Each middleware runs in order, seeing the complete topology. Can modify topology and register `onBrokerCreated` callbacks.
+4. **Create broker** — `BrokerAsPromised.create(finalTopology)`.
+5. **Wire handlers** — Subscribe event, command, and RPC handlers to their queues. Inbound interceptors are composed around each handler before subscription. Auto-ack on success. Nack without requeue on error.
+6. **Wire outbound** — Attach `publishEvent`, `sendCommand` to the broker. Outbound interceptors are composed per-call inside each publish method. If any RPC handlers or RPC callers exist, set up the reply queue subscription and attach `request`, `cancelRequest`. Wrap `broker.shutdown()` to drain pending RPC requests.
+7. **Middleware callbacks** — Each `onBrokerCreated` callback runs against the fully-wired broker. Fail-fast: if any callback throws, broker is shut down before the error propagates.
+
+---
+
+## Error Handling
+
+### Build failures
+
+```typescript
+// Error message includes service name, middleware execution count, and original error:
+// "Service 'order-service' broker creation failed. Pipeline executed 2 middleware(s). Original error: ..."
+// error.cause holds the original error
 ```
+
+### Middleware failures
+
+```typescript
+// Error message includes middleware index and name:
+// "Middleware 2 (withCustomLogger) failed: ..."
+// error.cause holds the original error
+```
+
+### RPC errors
+
+```typescript
+import { RpcError, RpcErrorCode } from "@apogeelabs/hoppity";
+
+try {
+    const result = await broker.request(OrdersDomain.rpc.createOrder, { items });
+} catch (err) {
+    if (err instanceof RpcError) {
+        switch (err.code) {
+            case RpcErrorCode.HANDLER_ERROR:
+                // The remote handler threw
+                break;
+            case RpcErrorCode.TIMEOUT:
+                // Request timed out (defaultTimeout or ServiceConfig.defaultTimeout)
+                break;
+            case RpcErrorCode.CANCELLED:
+                // broker.cancelRequest(correlationId) was called
+                break;
+        }
+    }
+}
+```
+
+### Handler errors (inbound)
+
+- Event/command handlers: nack without requeue on error — message goes to dead-letter exchange if configured, otherwise dropped.
+- RPC handlers: error response published back to caller with `RpcErrorCode.HANDLER_ERROR`.
+- Inbound Zod validation failures (when `validateInbound: true`): nack without requeue + error logged.
+
+---
+
+## ConsoleLogger
+
+Default logger used when no custom logger is provided.
+
+```typescript
+class ConsoleLogger implements Logger {
+    silly(message: string, ...args: any[]): void;  // → console.log
+    debug(message: string, ...args: any[]): void;  // → console.log
+    info(message: string, ...args: any[]): void;   // → console.log
+    warn(message: string, ...args: any[]): void;   // → console.warn
+    error(message: string, ...args: any[]): void;  // → console.error
+    critical(message: string, ...args: any[]): void; // → console.error
+}
+
+const defaultLogger: ConsoleLogger; // singleton instance
+```
+
+---
+
+## What Was Removed in v1
+
+These packages and APIs no longer exist:
+
+| Removed | Replacement |
+|---------|-------------|
+| `@apogeelabs/hoppity-contracts` | `defineDomain` is now in `@apogeelabs/hoppity` |
+| `@apogeelabs/hoppity-operations` | `onEvent`, `onCommand`, `onRpc` are now in `@apogeelabs/hoppity` |
+| `@apogeelabs/hoppity-rpc` | RPC is built into core — `broker.request()` / `broker.cancelRequest()` |
+| `@apogeelabs/hoppity-subscriptions` | Handler wiring is built-in — no `withSubscriptions()` needed |
+| `hoppity.withTopology()` | Use `hoppity.service(name, { topology: rawConfig })` |
+| `RascalBuilder` | Use `ServiceBuilder` (returned by `hoppity.service()`) |
+| `withOperations()` | Pass handlers directly in `ServiceConfig.handlers` |
+| `withOutboundExchange()` | Cut from v1 — add manually via raw `topology` if needed |
+| `buildServiceTopology()` | Topology is derived automatically — no manual call needed |
+| Manual `topology.ts` files | Delete them — handlers + publishes replace them entirely |
+| `as OperationsBroker` casts | `ServiceBroker` is the return type of `.build()` directly |
