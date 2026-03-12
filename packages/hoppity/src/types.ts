@@ -1,31 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BrokerAsPromised, BrokerConfig } from "rascal";
 
+// Forward declaration to avoid circular imports — ServiceBuilder and ServiceConfig
+// are defined in ServiceBuilder.ts but referenced from this interface.
+import type { ServiceBuilder, ServiceConfig } from "./ServiceBuilder";
+
 /**
- * Main interface for the Rascal wrapper that provides the entry point to the middleware pipeline.
+ * Entry point interface for hoppity.
  *
- * This wrapper provides two main entry points:
- * 1. `withTopology()` - Start with an existing topology configuration
- * 2. `use()` - Start with an empty topology and add middleware
- *
- * @interface RascalWrapper
+ * @interface Hoppity
  */
 export interface Hoppity {
     /**
-     * Creates a builder instance with an initial topology configuration.
+     * Creates a contract-driven service builder. Handlers and publish declarations
+     * are the topology — everything is derived automatically.
      *
-     * @param {BrokerConfig} topology - Initial topology configuration
-     * @returns {BuilderInterface} - Builder instance for chaining middleware
+     * @param {string} serviceName - The service identifier, used for queue naming
+     * @param {ServiceConfig} config - Connection, handlers, publishes, and optional raw topology
+     * @returns {ServiceBuilder} - Builder instance for chaining middleware and calling .build()
      */
-    withTopology(topology: BrokerConfig): BuilderInterface;
-
-    /**
-     * Creates a builder instance with an empty topology and adds the first middleware.
-     *
-     * @param {MiddlewareFunction} middleware - The first middleware to add
-     * @returns {BuilderInterface} - Builder instance for chaining additional middleware
-     */
-    use(middleware: MiddlewareFunction): BuilderInterface;
+    service(serviceName: string, config: ServiceConfig): ServiceBuilder;
 }
 
 /**
@@ -86,11 +80,13 @@ export interface Logger {
  * @property {Record<string, any>} data - Arbitrary data that can be set and read by middleware
  * @property {string[]} middlewareNames - Names of middleware that have already executed
  * @property {Logger} logger - Logger instance for middleware to use
+ * @property {string} [serviceName] - The service name, populated by ServiceBuilder
  */
 export interface MiddlewareContext {
     data: Record<string, any>;
     middlewareNames: string[];
     logger: Logger;
+    serviceName?: string;
 }
 
 /**
@@ -181,29 +177,8 @@ export type MiddlewareFunction = (
 ) => MiddlewareResult;
 
 /**
- * Interface for the builder pattern that allows chaining middleware.
- * Provides a fluent API for configuring the Rascal broker with middleware pipeline.
- *
- * @interface BuilderInterface
- */
-export interface BuilderInterface {
-    /**
-     * Adds middleware to the pipeline.
-     * @param {MiddlewareFunction} middleware - The middleware function to add
-     * @returns {BuilderInterface} - Returns self for method chaining
-     */
-    use(middleware: MiddlewareFunction): BuilderInterface;
-
-    /**
-     * Creates the Rascal broker with the configured topology and executes all middleware callbacks.
-     * @returns {Promise<BrokerAsPromised>} - The configured Rascal broker instance
-     */
-    build(): Promise<BrokerAsPromised>;
-}
-
-/**
  * Utility type for combining a Rascal broker with extension methods added by middleware.
- * Middleware like `hoppity-rpc` and `hoppity-delayed-publish` monkey-patch extra methods
+ * Middleware like `hoppity-logger` can monkey-patch extra methods
  * onto the broker in their `onBrokerCreated` callbacks. This type makes those extensions
  * type-safe by intersecting the base `BrokerAsPromised` with each extension record.
  *
