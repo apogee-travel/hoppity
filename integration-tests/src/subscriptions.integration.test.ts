@@ -1,14 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import hoppity from "@apogeelabs/hoppity";
+import hoppity, { ServiceBroker } from "@apogeelabs/hoppity";
 import { withCustomLogger } from "@apogeelabs/hoppity-logger";
-import { withSubscriptions } from "@apogeelabs/hoppity-subscriptions";
-import { BrokerAsPromised } from "rascal";
 import { createTestTopology } from "./helpers/createTestTopology";
 import { silentLogger } from "./helpers/silentLogger";
 
+/**
+ * These tests exercise raw topology subscriptions through the ServiceBroker escape hatch.
+ * Subscription wiring via contract handlers is tested in the combined integration test.
+ * Here we verify the base broker can publish/receive without contract overhead.
+ */
 describe("subscriptions: auto-wired handlers receive messages", () => {
     describe("when a handler is registered for a subscription", () => {
-        let broker: BrokerAsPromised;
+        let broker: ServiceBroker;
         let receivedMessages: any[];
         let messageReceived: Promise<void>;
         let resolveMessageReceived: () => void;
@@ -46,18 +49,20 @@ describe("subscriptions: auto-wired handlers receive messages", () => {
             };
 
             broker = await hoppity
-                .withTopology(topology)
+                .service("sub-test", {
+                    connection: { url: "unused" },
+                    topology,
+                })
                 .use(withCustomLogger({ logger: silentLogger }))
-                .use(
-                    withSubscriptions({
-                        sub_test_sub: (_message, content, ackOrNack, _broker) => {
-                            receivedMessages.push(content);
-                            ackOrNack();
-                            resolveMessageReceived();
-                        },
-                    })
-                )
                 .build();
+
+            // Subscribe directly via the underlying Rascal broker
+            const sub = await broker.subscribe("sub_test_sub");
+            sub.on("message", (_msg, content, ackOrNack) => {
+                receivedMessages.push(content);
+                ackOrNack();
+                resolveMessageReceived();
+            });
 
             await broker.publish("sub_test_pub", {
                 pizza: "CAL_ZONE",
@@ -82,7 +87,7 @@ describe("subscriptions: auto-wired handlers receive messages", () => {
     });
 
     describe("when multiple handlers are registered", () => {
-        let broker: BrokerAsPromised;
+        let broker: ServiceBroker;
         let alphaMessages: any[];
         let bravoMessages: any[];
         let bothReceived: Promise<void>;
@@ -143,23 +148,26 @@ describe("subscriptions: auto-wired handlers receive messages", () => {
             };
 
             broker = await hoppity
-                .withTopology(topology)
+                .service("sub-multi-test", {
+                    connection: { url: "unused" },
+                    topology,
+                })
                 .use(withCustomLogger({ logger: silentLogger }))
-                .use(
-                    withSubscriptions({
-                        sub_alpha_sub: (_message, content, ackOrNack) => {
-                            alphaMessages.push(content);
-                            ackOrNack();
-                            alphaResolve();
-                        },
-                        sub_bravo_sub: (_message, content, ackOrNack) => {
-                            bravoMessages.push(content);
-                            ackOrNack();
-                            bravoResolve();
-                        },
-                    })
-                )
                 .build();
+
+            const alphaSub = await broker.subscribe("sub_alpha_sub");
+            alphaSub.on("message", (_msg, content, ackOrNack) => {
+                alphaMessages.push(content);
+                ackOrNack();
+                alphaResolve();
+            });
+
+            const bravoSub = await broker.subscribe("sub_bravo_sub");
+            bravoSub.on("message", (_msg, content, ackOrNack) => {
+                bravoMessages.push(content);
+                ackOrNack();
+                bravoResolve();
+            });
 
             await broker.publish("sub_alpha_pub", { team: "ALPHA" });
             await broker.publish("sub_bravo_pub", { team: "BRAVO" });

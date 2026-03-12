@@ -1,21 +1,41 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import hoppity from "@apogeelabs/hoppity";
+import hoppity, { ServiceBroker, defineDomain, onRpc, onEvent } from "@apogeelabs/hoppity";
 import { withCustomLogger } from "@apogeelabs/hoppity-logger";
-import { RpcBroker, withRpcSupport } from "@apogeelabs/hoppity-rpc";
-import { withSubscriptions } from "@apogeelabs/hoppity-subscriptions";
-import { randomUUID } from "crypto";
+import { z } from "zod";
 import { createTestTopology } from "./helpers/createTestTopology";
 import { silentLogger } from "./helpers/silentLogger";
 
+// Isolated domain names to avoid collisions between integration test suites
+const CombinedDomain = defineDomain("combined_test", {
+    events: {
+        thingHappened: z.object({ event: z.string() }),
+    },
+    rpc: {
+        greet: {
+            request: z.object({ name: z.string() }),
+            response: z.object({ greeting: z.string() }),
+        },
+    },
+});
+
+function makeConnection() {
+    const topology = createTestTopology();
+    const rawVhost = (topology.vhosts as any)["/"];
+    return {
+        url: rawVhost.connection.url as string,
+        vhost: "/",
+        options: { heartbeat: 5 },
+    };
+}
+
 describe("combined: multiple middleware on one broker", () => {
-    describe("when logger + rpc + subscriptions middleware are all applied", () => {
-        let serverBroker: RpcBroker;
-        let clientBroker: RpcBroker;
+    describe("when logger + rpc + event handler middleware are all applied", () => {
+        let serverBroker: ServiceBroker;
+        let clientBroker: ServiceBroker;
         let rpcResult: any;
         let subscriptionMessages: any[];
         let subscriptionReceived: Promise<void>;
         let resolveSubscription: () => void;
-        const RPC_EXCHANGE = "COMBINED_RPC_EXCHANGE";
 
         beforeAll(async () => {
             subscriptionMessages = [];
@@ -23,101 +43,57 @@ describe("combined: multiple middleware on one broker", () => {
                 resolveSubscription = resolve;
             });
 
-            // Build a server broker with RPC + subscriptions
-            const serverTopology = createTestTopology();
-            const serverVhost = serverTopology.vhosts!["/"] as any;
-            serverVhost.exchanges = {
-                combined_events_exchange: {
-                    type: "topic",
-                    options: { durable: false, autoDelete: true },
-                },
-            };
-            serverVhost.queues = {
-                combined_events_queue: { options: { durable: false, autoDelete: true } },
-            };
-            serverVhost.bindings = {
-                combined_events_binding: {
-                    source: "combined_events_exchange",
-                    destination: "combined_events_queue",
-                    destinationType: "queue",
-                    bindingKey: "#",
-                },
-            };
-            serverVhost.publications = {
-                combined_events_pub: { exchange: "combined_events_exchange" },
-            };
-            serverVhost.subscriptions = {
-                combined_events_sub: { queue: "combined_events_queue" },
-            };
+            // Server handles RPC greet AND subscribes to thingHappened events
+            const greetHandler = onRpc(CombinedDomain.rpc.greet, async (request, _ctx) => ({
+                greeting: `HELLO_${request.name}`,
+            }));
 
-            serverBroker = (await hoppity
-                .withTopology(serverTopology)
-                .use(withCustomLogger({ logger: silentLogger }))
-                .use(
-                    withRpcSupport({
-                        serviceName: "COMBINED_SERVER",
-                        instanceId: randomUUID(),
-                        rpcExchange: RPC_EXCHANGE,
-                        defaultTimeout: 10_000,
-                    })
-                )
-                .use(
-                    withSubscriptions({
-                        combined_events_sub: (_message, content, ackOrNack) => {
-                            subscriptionMessages.push(content);
-                            ackOrNack();
-                            resolveSubscription();
-                        },
-                    })
-                )
-                .build()) as RpcBroker;
-
-            // Register an RPC handler on the server
-            serverBroker.addRpcListener(
-                "COMBINED_SERVER.greet",
-                async (payload: { name: string }) => {
-                    return { greeting: `HELLO_${payload.name}` };
+            const thingHappenedHandler = onEvent(
+                CombinedDomain.events.thingHappened,
+                async (content, _ctx) => {
+                    subscriptionMessages.push(content);
+                    resolveSubscription();
                 }
             );
 
+            serverBroker = await hoppity
+                .service("combined-server", {
+                    connection: makeConnection(),
+                    handlers: [greetHandler, thingHappenedHandler],
+                    // Server also publishes thingHappened so it can fire events
+                    publishes: [CombinedDomain.events.thingHappened],
+                })
+                .use(withCustomLogger({ logger: silentLogger }))
+                .build();
+
             await new Promise(r => setTimeout(r, 500));
 
-            // Build a client broker with just RPC
-            clientBroker = (await hoppity
-                .withTopology(createTestTopology())
+            // Client calls the RPC and publishes events
+            clientBroker = await hoppity
+                .service("combined-client", {
+                    connection: makeConnection(),
+                    publishes: [CombinedDomain.rpc.greet, CombinedDomain.events.thingHappened],
+                })
                 .use(withCustomLogger({ logger: silentLogger }))
-                .use(
-                    withRpcSupport({
-                        serviceName: "COMBINED_CLIENT",
-                        instanceId: randomUUID(),
-                        rpcExchange: RPC_EXCHANGE,
-                        defaultTimeout: 10_000,
-                    })
-                )
-                .build()) as RpcBroker;
+                .build();
 
-            // Exercise both RPC and subscription on the same broker
-            rpcResult = await clientBroker.request("COMBINED_SERVER.greet", { name: "MCFLY" });
-            await serverBroker.publish("combined_events_pub", {
+            rpcResult = await clientBroker.request(CombinedDomain.rpc.greet, { name: "MCFLY" });
+            await clientBroker.publishEvent(CombinedDomain.events.thingHappened, {
                 event: "FLUX_CAPACITOR_ENGAGED",
             });
             await subscriptionReceived;
-        });
+        }, 30_000);
 
         afterAll(async () => {
-            if (clientBroker) {
-                await clientBroker.shutdown();
-            }
-            if (serverBroker) {
-                await serverBroker.shutdown();
-            }
+            if (clientBroker) await clientBroker.shutdown();
+            if (serverBroker) await serverBroker.shutdown();
         });
 
         it("should complete the RPC round-trip", () => {
             expect(rpcResult).toEqual({ greeting: "HELLO_MCFLY" });
         });
 
-        it("should deliver the subscription message", () => {
+        it("should deliver the event message to the handler", () => {
             expect(subscriptionMessages).toHaveLength(1);
             expect(subscriptionMessages[0]).toEqual({
                 event: "FLUX_CAPACITOR_ENGAGED",

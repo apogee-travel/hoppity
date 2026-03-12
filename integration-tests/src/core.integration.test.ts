@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import hoppity, { MiddlewareFunction } from "@apogeelabs/hoppity";
+import hoppity, { MiddlewareFunction, ServiceBroker } from "@apogeelabs/hoppity";
 import { withCustomLogger } from "@apogeelabs/hoppity-logger";
-import { BrokerAsPromised } from "rascal";
+import { BrokerConfig } from "rascal";
 import { createTestTopology } from "./helpers/createTestTopology";
 import { waitForMessage } from "./helpers/waitForMessage";
 import { silentLogger } from "./helpers/silentLogger";
 
 describe("core: builder -> real broker -> real topology", () => {
-    describe("when building a broker with base topology", () => {
-        let broker: BrokerAsPromised;
+    describe("when building a broker with raw topology only", () => {
+        let broker: ServiceBroker;
         let receivedMessage: any;
 
         beforeAll(async () => {
@@ -38,7 +38,11 @@ describe("core: builder -> real broker -> real topology", () => {
                 core_test_sub: { queue: "core_test_queue" },
             };
 
-            broker = await hoppity.withTopology(topology).build();
+            // The raw topology escape hatch: service() with no handlers/publishes,
+            // topology provided directly as BrokerConfig
+            broker = await hoppity
+                .service("core-test", { connection: { url: "unused" }, topology })
+                .build();
 
             const messagePromise = waitForMessage(broker, "core_test_sub");
             await broker.publish("core_test_pub", { greeting: "HELLO_RABBIT" });
@@ -59,7 +63,7 @@ describe("core: builder -> real broker -> real topology", () => {
     });
 
     describe("when applying middleware that modifies topology", () => {
-        let broker: BrokerAsPromised;
+        let broker: ServiceBroker;
         let receivedMessage: any;
         let callbackFired: boolean;
 
@@ -101,8 +105,10 @@ describe("core: builder -> real broker -> real topology", () => {
                 };
             };
 
+            const baseTopology = createTestTopology();
+
             broker = await hoppity
-                .withTopology(createTestTopology())
+                .service("core-mw-test", { connection: { url: "unused" }, topology: baseTopology })
                 .use(withCustomLogger({ logger: silentLogger }))
                 .use(addTopology)
                 .build();

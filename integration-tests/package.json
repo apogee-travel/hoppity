@@ -7,10 +7,7 @@
     },
     "devDependencies": {
         "@apogeelabs/hoppity": "workspace:*",
-        "@apogeelabs/hoppity-delayed-publish": "workspace:*",
         "@apogeelabs/hoppity-logger": "workspace:*",
-        "@apogeelabs/hoppity-rpc": "workspace:*",
-        "@apogeelabs/hoppity-subscriptions": "workspace:*",
         "@testcontainers/rabbitmq": "^11.11.0",
         "@types/jest": "^29.5.5",
         "@types/rascal": "^10.2.1",
@@ -18,6 +15,7 @@
         "rascal": "^20.1.1",
         "testcontainers": "^11.11.0",
         "ts-jest": "^29.1.1",
-        "typescript": "^5.2.2"
+        "typescript": "^5.2.2",
+        "zod": "^3.22.0"
     }
 }
