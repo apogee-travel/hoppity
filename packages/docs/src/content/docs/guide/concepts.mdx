@@ -1,49 +1,129 @@
 ---
 title: Concepts
-description: Core concepts behind hoppity's middleware pipeline architecture.
+description: Core concepts behind hoppity's contract-driven architecture and middleware pipeline.
 ---
 
-## The Middleware Pipeline
+## Contract-Driven Topology
 
-Hoppity's core idea is simple: instead of hand-crafting one massive Rascal `BrokerConfig` object per service, you compose small, reusable middleware functions that each handle one concern.
+Hoppity's core idea: handlers and publish declarations ARE the topology. You declare what your service handles and what it sends. `deriveTopology` generates all Rascal config automatically — exchanges, queues, bindings, publications, and subscriptions.
 
 ```
-withTopology(base) → use(logger) → use(rpc) → use(subscriptions) → build()
+defineDomain() → onEvent/onCommand/onRpc() → hoppity.service() → .build()
 ```
 
-Each middleware receives the current topology and a shared context, returns a (possibly modified) topology, and can optionally provide a lifecycle hook that runs after the broker is created.
+No topology files. No string-literal exchange/queue names scattered across services. The contracts carry all the naming conventions, and the topology is derived mechanically.
 
-## Three Phases
+## Domain Contracts
 
-When you call `.build()`, three phases execute in order:
+A domain groups related events, commands, and RPC operations with Zod schemas:
 
-### 1. Middleware Execution (synchronous)
+```typescript
+import { z } from "zod";
+import { defineDomain } from "@apogeelabs/hoppity";
+
+export const OrdersDomain = defineDomain("orders", {
+    events: {
+        orderCreated: z.object({ orderId: z.string(), total: z.number() }),
+    },
+    commands: {
+        cancelOrder: z.object({ orderId: z.string() }),
+    },
+    rpc: {
+        getOrderSummary: {
+            request: z.object({ orderId: z.string() }),
+            response: z.object({ orderId: z.string(), status: z.string() }),
+        },
+    },
+});
+```
+
+Each contract object carries:
+
+- **Schema** — Zod type for runtime validation and compile-time inference
+- **Exchange name** — `{domain}` for events/commands, `{domain}_rpc` for RPC
+- **Routing key** — `{domain}.{type}.{snake_name}` (e.g., `orders.event.order_created`)
+- **Publication/subscription names** — derived mechanically from domain, type, and operation name
+
+Contracts are shared between services. Both producer and consumer import the same contract objects.
+
+## Handlers
+
+Handlers declare what your service processes. Each is bound to a contract and registered in `ServiceConfig.handlers`:
+
+```typescript
+import { onEvent, onCommand, onRpc } from "@apogeelabs/hoppity";
+
+// Event handler — reacts to broadcasts
+const handler = onEvent(OrdersDomain.events.orderCreated, async (content, context) => {
+    // content is typed from the contract's schema
+});
+
+// Command handler — processes directed work
+const handler = onCommand(OrdersDomain.commands.cancelOrder, async ({ orderId }, { broker }) => {
+    await broker.publishEvent(OrdersDomain.events.orderCancelled, { orderId });
+});
+
+// RPC handler — responds synchronously
+const handler = onRpc(OrdersDomain.rpc.getOrderSummary, async ({ orderId }) => {
+    return { orderId, status: "active" }; // return type enforced by response schema
+});
+```
+
+All handlers accept optional `HandlerOptions` for queue type, redelivery limits, and dead-letter configuration:
+
+```typescript
+const handler = onCommand(OrdersDomain.commands.cancelOrder, handlerFn, {
+    queueType: "quorum", // defaults to "quorum"
+    redeliveries: { limit: 10 }, // defaults to { limit: 5 }
+    deadLetter: { exchange: "my-dlx" },
+});
+```
+
+## Seven Build Phases
+
+When you call `.build()`, seven phases execute in order:
+
+### 1. Topology Derivation
+
+`deriveTopology()` generates a complete Rascal `BrokerConfig` from handler declarations and publish contracts. Every handler produces a queue, binding, and subscription. Every publish contract produces a publication (and the exchange, if not already declared by a handler).
+
+### 2. Topology Merge
+
+`mergeTopology(rawTopology, derived)` combines the optional raw `topology` from `ServiceConfig` (as base) with the derived config. This is the escape hatch — use it for one-off infrastructure that can't be derived (DLX exchanges, shovel config, etc.).
+
+### 3. Middleware Pipeline (synchronous)
 
 Each middleware function runs sequentially. It receives:
 
-- `topology` — the current `BrokerConfig`, as modified by all prior middleware
-- `context` — a shared `MiddlewareContext` with a logger, mutable data store, and middleware name tracking
+- `topology` — the current `BrokerConfig`, after derivation and merge
+- `context` — a shared `MiddlewareContext` with logger, mutable data store, and middleware name tracking
 
 Each returns a `MiddlewareResult`:
 
 ```typescript
 {
-    topology: BrokerConfig;                                       // Required — the (possibly modified) topology
+    topology: BrokerConfig;                                        // Required — the (possibly modified) topology
     onBrokerCreated?: (broker: BrokerAsPromised) => Promise<void>; // Optional lifecycle hook
 }
 ```
 
-Middleware functions are **synchronous**. If you need async work (subscribing, publishing, setting up listeners), put it in `onBrokerCreated`.
+Middleware functions are **synchronous**. Async work goes in `onBrokerCreated`.
 
-### 2. Broker Creation
+### 4. Broker Creation
 
 The final accumulated topology is passed to Rascal's `BrokerAsPromised.create()`. This is where the AMQP connection is established and all exchanges, queues, and bindings are declared in RabbitMQ.
 
-### 3. Callback Execution (async, sequential)
+### 5. Handler Wiring
 
-Each `onBrokerCreated` callback runs in the order its middleware was registered. This is where subscription wiring, RPC listener registration, and other broker-dependent setup happens.
+`wireHandlers()` subscribes event and command handlers to their queues. `wireRpcHandlers()` subscribes RPC responders. Auto-ack on success, nack without requeue on error.
 
-If any callback throws, the broker is **shut down** before the error propagates. This ensures you don't leak AMQP connections on partial setup failures.
+### 6. Outbound Wiring
+
+`wireOutbound()` attaches `publishEvent` and `sendCommand` to the broker. If any RPC handlers or callers exist, the reply queue subscription is set up and `request` / `cancelRequest` are attached. `broker.shutdown()` is wrapped to drain pending RPC requests.
+
+### 7. Callback Execution (async, sequential)
+
+Each `onBrokerCreated` callback runs in the order its middleware was registered. If any callback throws, the broker is **shut down** before the error propagates.
 
 ## MiddlewareContext
 
@@ -54,92 +134,32 @@ interface MiddlewareContext {
     data: Record<string, any>; // Mutable shared state for inter-middleware communication
     middlewareNames: string[]; // Names of executed middleware (in order)
     logger: Logger; // Logger instance (defaults to ConsoleLogger)
+    serviceName?: string; // The service name passed to hoppity.service()
 }
 ```
 
-- **`context.data`** — Any middleware can read/write here. Useful for passing configuration between middleware (e.g., validated subscription names, service metadata).
+- **`context.data`** — Any middleware can read/write here. Useful for passing configuration between middleware.
 - **`context.logger`** — All middleware should use this for logging. If `withCustomLogger` runs first, everything downstream uses your custom logger.
-- **`context.middlewareNames`** — Tracks execution order for diagnostics.
+- **`context.serviceName`** — The service name, populated automatically by the builder.
 
-## Middleware Ordering
+## Middleware
+
+Middleware is for **cross-cutting concerns only** — things that apply across the service but aren't specific to any one handler or contract. Logging, observability, custom topology augmentation.
+
+Handlers, subscriptions, RPC, and typed broker methods are all built into core. You do not need middleware for any of those.
+
+### Ordering
 
 Order matters. The recommended convention:
 
-| Position | Middleware             | Reason                                                                  |
-| -------- | ---------------------- | ----------------------------------------------------------------------- |
-| 1st      | `withCustomLogger`     | Replaces `context.logger` so all downstream middleware uses your logger |
-| Middle   | `buildServiceTopology` | Generates topology from domain contracts                                |
-| Middle   | `withRpcSupport`       | Adds RPC exchange, queues, bindings                                     |
-| Middle   | `withDelayedPublish`   | Adds wait/ready queue infrastructure                                    |
-| Middle   | `withOperations`       | Wires typed handlers and extends the broker                             |
-| Last     | `withSubscriptions`    | Validates handler keys against the finalized topology                   |
+| Position | Middleware         | Reason                                                                  |
+| -------- | ------------------ | ----------------------------------------------------------------------- |
+| 1st      | `withCustomLogger` | Replaces `context.logger` so all downstream middleware uses your logger |
+| After    | Custom middleware  | Your own cross-cutting concerns                                         |
 
-`withSubscriptions` should always be last because it validates that every handler key matches a subscription name in the topology. If earlier middleware adds subscriptions (e.g., `withOperations`), those must run first or validation will fail.
+`withCustomLogger` should always go first so the custom logger is available to all subsequent middleware and to the framework itself during handler wiring and broker creation.
 
-## Topology
-
-Hoppity uses Rascal's `BrokerConfig` type for topology. This is a JSON-like object describing your RabbitMQ infrastructure:
-
-```typescript
-const topology: BrokerConfig = {
-    vhosts: {
-        "/": {
-            connection: { url: "amqp://guest:guest@localhost:5672" },
-            exchanges: {
-                /* ... */
-            },
-            queues: {
-                /* ... */
-            },
-            bindings: {
-                /* ... */
-            },
-            publications: {
-                /* ... */
-            },
-            subscriptions: {
-                /* ... */
-            },
-        },
-    },
-};
-```
-
-The topology is `structuredClone()`d at builder construction to prevent external mutation. Each middleware receives a copy and can modify it freely — the next middleware receives the previous middleware's output.
-
-## Extending the Broker
-
-Several middleware packages add methods to the broker instance (e.g., `broker.request()`, `broker.delayedPublish()`, `broker.publishEvent()`). Since Rascal's `BrokerAsPromised` type doesn't know about these, hoppity provides a `BrokerWithExtensions` utility type:
-
-```typescript
-import { BrokerWithExtensions } from "@apogeelabs/hoppity";
-import { RpcBroker } from "@apogeelabs/hoppity-rpc";
-import { DelayedPublishBroker } from "@apogeelabs/hoppity-delayed-publish";
-
-// Combine multiple extension interfaces
-type MyBroker = BrokerWithExtensions<[RpcBroker, DelayedPublishBroker]>;
-
-const broker = (await hoppity
-    .withTopology(topology)
-    .use(withRpcSupport(opts))
-    .use(withDelayedPublish(opts))
-    .build()) as MyBroker;
-
-// Now TypeScript knows about .request(), .addRpcListener(), and .delayedPublish()
-```
-
-## Contract-Driven Development
-
-The newer `hoppity-contracts` and `hoppity-operations` packages introduce a higher-level pattern:
-
-1. **Define domain contracts** — Shared Zod-validated schemas for events, commands, and RPC operations
-2. **Build service topology** — Declare what each service publishes/consumes using a fluent API
-3. **Wire typed handlers** — Register handlers that receive validated, typed payloads
-4. **Use typed broker methods** — `broker.publishEvent()`, `broker.sendCommand()`, `broker.request()` all enforce payload types at compile time
-
-This eliminates string-literal coupling between services and catches contract mismatches at build time rather than runtime.
-
-## Writing Custom Middleware
+### Writing Custom Middleware
 
 A middleware is a function (or a factory that returns one) matching the `MiddlewareFunction` signature:
 
@@ -172,3 +192,85 @@ Key rules:
 - **Synchronous body** — The middleware function itself must be synchronous. Async work goes in `onBrokerCreated`
 - **Return topology** — Always return `{ topology }` even if you didn't modify it
 - **Use `context.logger`** — Not `console.log`. Respect the pipeline's logger.
+
+## Interceptors
+
+Interceptors wrap handler and publish execution for per-message cross-cutting concerns — tracing, metrics, header injection. They complement middleware: middleware runs once during setup, interceptors run for every message.
+
+```typescript
+const withHandlerTiming: Interceptor = {
+    name: "handler-timing",
+    inbound: (handler, meta) => async (payload, ctx) => {
+        const start = performance.now();
+        try {
+            return await handler(payload, ctx);
+        } finally {
+            console.log(
+                `${meta.contract._name} handled in ${(performance.now() - start).toFixed(2)}ms`
+            );
+        }
+    },
+};
+
+const broker = await hoppity
+    .service("order-service", {
+        connection: { url: "amqp://localhost" },
+        handlers: [cancelOrderHandler],
+        publishes: [OrdersDomain.events.orderCreated],
+        interceptors: [withHandlerTiming],
+    })
+    .build();
+```
+
+For composition mechanics, metadata types, RPC support, and the full comparison with middleware, see the [Interceptors guide](/hoppity/guide/interceptors/).
+
+## Naming Conventions
+
+Topology artifact names are derived mechanically from domain contracts. You don't set them — the contracts carry them.
+
+| Artifact                 | Pattern                                  | Example                                      |
+| ------------------------ | ---------------------------------------- | -------------------------------------------- |
+| Exchange (event/command) | `{domain}`                               | `orders`                                     |
+| Exchange (rpc)           | `{domain}_rpc`                           | `orders_rpc`                                 |
+| Routing key (event)      | `{domain}.event.{snake_name}`            | `orders.event.order_created`                 |
+| Routing key (command)    | `{domain}.command.{snake_name}`          | `orders.command.cancel_order`                |
+| Routing key (rpc)        | `{domain}.rpc.{snake_name}`              | `orders.rpc.create_order`                    |
+| Queue                    | `{service}_{domain}_{type}_{snake_name}` | `catalog-service_orders_event_order_created` |
+| Publication name         | `{domain}_{type}_{snake_name}`           | `orders_event_order_created`                 |
+| Subscription name        | `{domain}_{type}_{snake_name}`           | `orders_event_order_created`                 |
+| Reply queue              | `{service}_{instanceId}_reply`           | `order-service_abc123_reply`                 |
+
+camelCase operation names are converted to snake_case. Acronyms collapse to a single segment: `getHTTPResponse` becomes `get_http_response`.
+
+## The Escape Hatch
+
+For services not using contracts, or for one-off infrastructure that can't be derived, pass raw Rascal `BrokerConfig` directly:
+
+```typescript
+const broker = await hoppity
+    .service("legacy-service", {
+        connection: { url: "amqp://localhost" },
+        topology: existingRascalConfig, // raw BrokerConfig, merged as base
+    })
+    .build();
+```
+
+You can combine raw topology with derived topology. The raw config is the base; derived topology layers on top:
+
+```typescript
+const broker = await hoppity
+    .service("order-service", {
+        connection: { url: "amqp://localhost" },
+        handlers: [cancelOrderHandler],
+        publishes: [OrdersDomain.events.orderCancelled],
+        topology: {
+            // DLX exchange not derived automatically — add it manually
+            vhosts: {
+                "/": {
+                    exchanges: { "order-service-dlx": { type: "topic" } },
+                },
+            },
+        },
+    })
+    .build();
+```

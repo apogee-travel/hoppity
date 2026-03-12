@@ -5,55 +5,88 @@ description: What hoppity is and why it exists.
 
 ## What is hoppity?
 
-Hoppity is a pattern-driven RabbitMQ topology builder for Node.js microservices, built on top of [Rascal](https://github.com/guidesmiths/rascal). It provides a composable middleware pipeline where each middleware receives a `BrokerConfig` and a shared `MiddlewareContext`, can modify both, and optionally return an `onBrokerCreated` callback for lifecycle hooks.
+Hoppity is a contract-driven RabbitMQ topology builder for Node.js microservices, built on top of [Rascal](https://github.com/guidesmiths/rascal). You declare domain contracts (events, commands, RPC) using Zod schemas, register handlers, and Hoppity derives all the Rascal topology automatically — exchanges, queues, bindings, publications, and subscriptions.
 
 ## The Problem
 
-Rascal gives you a powerful, configuration-driven way to manage RabbitMQ topologies — exchanges, queues, bindings, publications, and subscriptions all declared in a single config object. But as your microservice estate grows, you end up with:
+Rascal gives you a powerful, configuration-driven way to manage RabbitMQ topologies. But as your microservice estate grows, you end up with:
 
 - Repeated boilerplate across services (the same exchange patterns, the same retry configurations)
 - Topology config objects that balloon into hundreds of lines
-- No clean way to share and compose common patterns (RPC, delayed publish, standard error handling)
+- String-literal coupling between services — rename a queue and watch everything break at runtime instead of compile time
+- No clean way to share message schemas between producers and consumers
 
 ## The Solution
 
-Hoppity wraps Rascal's broker creation in a **middleware pipeline**. You start with a base topology and layer on reusable middleware that each handle a specific concern:
+Hoppity introduces **domain contracts** as the single source of truth. You define what your service handles and what it sends. The topology is derived mechanically from those declarations.
 
 ```typescript
-import hoppity from "@apogeelabs/hoppity";
+import { z } from "zod";
+import hoppity, { defineDomain, onEvent, onCommand, onRpc } from "@apogeelabs/hoppity";
 import { withCustomLogger } from "@apogeelabs/hoppity-logger";
-import { withRpcSupport } from "@apogeelabs/hoppity-rpc";
-import { withSubscriptions } from "@apogeelabs/hoppity-subscriptions";
-import { randomUUID } from "crypto";
 
+// Define the domain — shared between services
+const OrdersDomain = defineDomain("orders", {
+    events: {
+        orderCreated: z.object({ orderId: z.string(), total: z.number() }),
+    },
+    commands: {
+        cancelOrder: z.object({ orderId: z.string() }),
+    },
+    rpc: {
+        getOrderSummary: {
+            request: z.object({ orderId: z.string() }),
+            response: z.object({ orderId: z.string(), status: z.string() }),
+        },
+    },
+});
+
+// Build the service — handlers and publishes ARE the topology
 const broker = await hoppity
-    .withTopology(baseTopology)
+    .service("order-service", {
+        connection: { url: "amqp://localhost" },
+        handlers: [
+            onCommand(OrdersDomain.commands.cancelOrder, async ({ orderId }, { broker }) => {
+                // handle the command...
+            }),
+            onRpc(OrdersDomain.rpc.getOrderSummary, async ({ orderId }) => {
+                return { orderId, status: "active" };
+            }),
+        ],
+        publishes: [OrdersDomain.events.orderCreated],
+    })
     .use(withCustomLogger({ logger: myLogger }))
-    .use(withRpcSupport({ serviceName: "my-svc", instanceId: randomUUID() }))
-    .use(withSubscriptions(handlers))
     .build();
+
+// Typed outbound methods on the broker
+await broker.publishEvent(OrdersDomain.events.orderCreated, { orderId: "ord-1", total: 42.0 });
+const summary = await broker.request(OrdersDomain.rpc.getOrderSummary, { orderId: "ord-1" });
 ```
 
-Each middleware is a pure function that receives the current topology and a shared context, returns a (possibly modified) topology, and can optionally provide an `onBrokerCreated` callback for post-creation setup.
+No topology files. No manual exchange/queue/binding declarations. The contracts carry the naming conventions, and `deriveTopology` generates all the Rascal config.
 
 ## Packages
 
-| Package                               | Purpose                                                                                 |
-| ------------------------------------- | --------------------------------------------------------------------------------------- |
-| `@apogeelabs/hoppity`                 | Core pipeline + builder                                                                 |
-| `@apogeelabs/hoppity-rpc`             | Request/reply with correlation IDs                                                      |
-| `@apogeelabs/hoppity-delayed-publish` | TTL-based delayed message delivery                                                      |
-| `@apogeelabs/hoppity-subscriptions`   | Auto-wired subscription handlers                                                        |
-| `@apogeelabs/hoppity-logger`          | Custom logger injection                                                                 |
-| `@apogeelabs/hoppity-contracts`       | Typed domain contracts (events, commands, RPC) with Zod schemas and topology generation |
-| `@apogeelabs/hoppity-operations`      | Typed runtime broker operations using contract objects                                  |
+| Package                              | Purpose                                                                                        |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `@apogeelabs/hoppity`                | Core — contracts, handlers, topology derivation, builder, broker wiring, RPC, delayed delivery |
+| `@apogeelabs/hoppity-logger`         | Custom logger injection (middleware)                                                           |
+| `@apogeelabs/hoppity-open-telemetry` | OpenTelemetry tracing and metrics interceptors                                                 |
 
 ## How the Pipeline Works
 
-When you call `.build()`, three phases execute in order:
+When you call `.build()`, seven phases execute in order:
 
-1. **Middleware execution** — Each middleware runs sequentially, receiving the current `BrokerConfig` and shared `MiddlewareContext`. Each returns a (possibly modified) topology and an optional `onBrokerCreated` callback.
+1. **Topology derivation** — `deriveTopology()` generates all exchanges, queues, bindings, publications, and subscriptions from the handler declarations and publish contracts.
 
-2. **Broker creation** — The final topology is passed to `BrokerAsPromised.create()` via Rascal.
+2. **Topology merge** — `mergeTopology()` combines any optional raw `BrokerConfig` with the derived topology. Raw config is the base; derived topology layers on top.
 
-3. **Callback execution** — Each `onBrokerCreated` callback runs sequentially. If any callback fails, the broker is shut down before the error propagates.
+3. **Middleware pipeline** — Each middleware runs sequentially, receiving the complete merged topology and shared `MiddlewareContext`. Returns modified topology and an optional `onBrokerCreated` callback.
+
+4. **Broker creation** — `BrokerAsPromised.create(finalTopology)` via Rascal.
+
+5. **Handler wiring** — Event, command, and RPC handlers are subscribed to their derived queues.
+
+6. **Outbound wiring** — `publishEvent`, `sendCommand`, `request`, and `cancelRequest` are attached to the broker.
+
+7. **Callback execution** — Each middleware's `onBrokerCreated` callback runs against the fully-wired broker. If any callback throws, the broker is shut down before the error propagates.
