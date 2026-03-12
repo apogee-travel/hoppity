@@ -5,7 +5,7 @@ prev: false
 title: "ConsoleLogger"
 ---
 
-Defined in: [consoleLogger.ts:11](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity/src/consoleLogger.ts#L11)
+Defined in: [packages/hoppity/src/consoleLogger.ts:11](https://github.com/apogee-travel/hoppity/blob/116ad649c2e29714e173c4ca41b19c4ffff2fa39/packages/hoppity/src/consoleLogger.ts#L11)
 
 Default console-based logger implementation.
 Provides a simple logging interface that maps to console methods.
@@ -34,7 +34,7 @@ ConsoleLogger
 
 > **critical**(`message`, ...`args`): `void`
 
-Defined in: [consoleLogger.ts:62](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity/src/consoleLogger.ts#L62)
+Defined in: [packages/hoppity/src/consoleLogger.ts:62](https://github.com/apogee-travel/hoppity/blob/116ad649c2e29714e173c4ca41b19c4ffff2fa39/packages/hoppity/src/consoleLogger.ts#L62)
 
 Log a critical error message using console.error
 
@@ -66,7 +66,7 @@ Additional arguments to log
 
 > **debug**(`message`, ...`args`): `void`
 
-Defined in: [consoleLogger.ts:26](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity/src/consoleLogger.ts#L26)
+Defined in: [packages/hoppity/src/consoleLogger.ts:26](https://github.com/apogee-travel/hoppity/blob/116ad649c2e29714e173c4ca41b19c4ffff2fa39/packages/hoppity/src/consoleLogger.ts#L26)
 
 Log a debug message using console.log
 
@@ -98,7 +98,7 @@ Additional arguments to log
 
 > **error**(`message`, ...`args`): `void`
 
-Defined in: [consoleLogger.ts:53](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity/src/consoleLogger.ts#L53)
+Defined in: [packages/hoppity/src/consoleLogger.ts:53](https://github.com/apogee-travel/hoppity/blob/116ad649c2e29714e173c4ca41b19c4ffff2fa39/packages/hoppity/src/consoleLogger.ts#L53)
 
 Log an error message using console.error
 
@@ -130,7 +130,7 @@ Additional arguments to log
 
 > **info**(`message`, ...`args`): `void`
 
-Defined in: [consoleLogger.ts:35](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity/src/consoleLogger.ts#L35)
+Defined in: [packages/hoppity/src/consoleLogger.ts:35](https://github.com/apogee-travel/hoppity/blob/116ad649c2e29714e173c4ca41b19c4ffff2fa39/packages/hoppity/src/consoleLogger.ts#L35)
 
 Log an info message using console.log
 
@@ -162,7 +162,7 @@ Additional arguments to log
 
 > **silly**(`message`, ...`args`): `void`
 
-Defined in: [consoleLogger.ts:17](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity/src/consoleLogger.ts#L17)
+Defined in: [packages/hoppity/src/consoleLogger.ts:17](https://github.com/apogee-travel/hoppity/blob/116ad649c2e29714e173c4ca41b19c4ffff2fa39/packages/hoppity/src/consoleLogger.ts#L17)
 
 Log a silly message using console.log
 
@@ -194,7 +194,7 @@ Additional arguments to log
 
 > **warn**(`message`, ...`args`): `void`
 
-Defined in: [consoleLogger.ts:44](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity/src/consoleLogger.ts#L44)
+Defined in: [packages/hoppity/src/consoleLogger.ts:44](https://github.com/apogee-travel/hoppity/blob/116ad649c2e29714e173c4ca41b19c4ffff2fa39/packages/hoppity/src/consoleLogger.ts#L44)
 
 Log a warning message using console.warn
 

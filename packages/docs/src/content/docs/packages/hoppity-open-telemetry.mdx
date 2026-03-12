@@ -1,0 +1,145 @@
+---
+title: hoppity-open-telemetry
+description: OpenTelemetry tracing and metrics interceptors for hoppity.
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+OpenTelemetry interceptors for hoppity. Provides `withTracing` for distributed tracing and `withMetrics` for handler and publish instrumentation. Both follow OpenTelemetry messaging semantic conventions for RabbitMQ.
+
+## Installation
+
+```bash
+npm install @apogeelabs/hoppity-open-telemetry
+```
+
+:::note
+Requires `@opentelemetry/api@^1.9.0` as a peer dependency. You are responsible for configuring the OTel SDK and exporters in your application — this package only instruments hoppity operations.
+:::
+
+## Usage
+
+Both interceptors are dual-use: use them directly in the `interceptors` array for default behavior, or call them as factories to supply options.
+
+<Tabs>
+<TabItem label="Direct (defaults)">
+
+```typescript
+import hoppity from "@apogeelabs/hoppity";
+import { withTracing, withMetrics } from "@apogeelabs/hoppity-open-telemetry";
+
+const broker = await hoppity
+    .service("order-service", {
+        connection: { url: process.env.RABBITMQ_URL! },
+        handlers: [cancelOrderHandler, getOrderSummaryHandler],
+        publishes: [OrdersDomain.events.orderCreated],
+        interceptors: [withTracing, withMetrics],
+    })
+    .build();
+```
+
+</TabItem>
+<TabItem label="Factory (options)">
+
+```typescript
+import hoppity from "@apogeelabs/hoppity";
+import { withTracing, withMetrics } from "@apogeelabs/hoppity-open-telemetry";
+
+const broker = await hoppity
+    .service("order-service", {
+        connection: { url: process.env.RABBITMQ_URL! },
+        handlers: [cancelOrderHandler, getOrderSummaryHandler],
+        publishes: [OrdersDomain.events.orderCreated],
+        interceptors: [
+            withTracing({ tracerName: "order-service" }),
+            withMetrics({
+                meterName: "order-service",
+                histogramBuckets: [5, 10, 25, 50, 100, 250],
+            }),
+        ],
+    })
+    .build();
+```
+
+</TabItem>
+</Tabs>
+
+## `withTracing`
+
+Distributed tracing interceptor. Wraps both inbound handler execution and outbound publish calls with OTel spans, and propagates trace context through AMQP message headers.
+
+### Inbound behavior
+
+For each incoming message, `withTracing` extracts the parent trace context from the AMQP message headers (using the configured propagator — typically W3C TraceContext). It then starts an active span as a child of that parent context, runs the handler, and records success or error status before ending the span.
+
+Span name format: `{kind}:{domain}.{operationName}` — for example, `event:orders.orderCreated` or `rpc:orders.getOrderSummary`.
+
+### Outbound behavior
+
+For each publish, `withTracing` starts an active span, injects the current trace context into the AMQP message headers, runs the publish, then records status and ends the span. Downstream consumers that also use `withTracing` will extract this context and link their spans as children.
+
+Span name format: `publish:{domain}.{operationName}` — for example, `publish:orders.orderCreated`.
+
+### Options
+
+| Option       | Type     | Default        | Description                                                                                                                                                                                                          |
+| ------------ | -------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tracerName` | `string` | `"hoppity"`    | Name passed to `trace.getTracer()`. Use a service-specific name if you want spans grouped under a different tracer.                                                                                                  |
+| `spanPrefix` | `string` | operation kind | Prefix prepended to span names before the colon. Defaults to `kind` for inbound (`"event"`, `"command"`, `"rpc"`) and `"publish"` for outbound. Override to namespace spans from multiple services sharing a tracer. |
+
+## `withMetrics`
+
+Handler and publish metrics interceptor. Records duration histograms, invocation counts, and error counts for both inbound and outbound operations.
+
+### Instruments
+
+**Inbound (handler) instruments:**
+
+| Metric name                | Type      | Description                               |
+| -------------------------- | --------- | ----------------------------------------- |
+| `hoppity.handler.duration` | Histogram | Handler execution duration (milliseconds) |
+| `hoppity.handler.count`    | Counter   | Number of handler invocations             |
+| `hoppity.handler.errors`   | Counter   | Number of handler errors                  |
+
+**Outbound (publish) instruments:**
+
+| Metric name                | Type      | Description                          |
+| -------------------------- | --------- | ------------------------------------ |
+| `hoppity.publish.duration` | Histogram | Publish call duration (milliseconds) |
+| `hoppity.publish.count`    | Counter   | Number of publish calls              |
+| `hoppity.publish.errors`   | Counter   | Number of publish errors             |
+
+### Lazy initialization
+
+Instruments are created on first invocation, not at interceptor construction time. This avoids initializing the OTel meter before the SDK is configured in the host application. As long as the OTel SDK is set up before the first message is processed or published, instruments will be registered correctly.
+
+### Options
+
+| Option             | Type       | Default       | Description                                                                                       |
+| ------------------ | ---------- | ------------- | ------------------------------------------------------------------------------------------------- |
+| `meterName`        | `string`   | `"hoppity"`   | Name passed to `metrics.getMeter()`. Use a service-specific name to scope metrics by service.     |
+| `histogramBuckets` | `number[]` | OTel defaults | Explicit bucket boundaries for duration histograms (milliseconds). Omit to use OTel SDK defaults. |
+
+## Attribute Conventions
+
+Both interceptors attach the same set of attributes to all spans and metric data points:
+
+| Attribute                    | Source                     | Example                         |
+| ---------------------------- | -------------------------- | ------------------------------- |
+| `messaging.system`           | Fixed: `"rabbitmq"`        | `"rabbitmq"`                    |
+| `messaging.operation.type`   | `"receive"` or `"publish"` | `"receive"`                     |
+| `messaging.destination.name` | `contract.exchange`        | `"orders"`                      |
+| `hoppity.domain`             | `contract._domain`         | `"orders"`                      |
+| `hoppity.operation`          | `contract._name`           | `"orderCreated"`                |
+| `hoppity.kind`               | `meta.kind`                | `"event"`, `"command"`, `"rpc"` |
+| `service.name`               | `meta.serviceName`         | `"order-service"`               |
+
+The `messaging.*` attributes follow the [OpenTelemetry messaging semantic conventions](https://opentelemetry.io/docs/specs/semconv/messaging/). The `hoppity.*` attributes are custom and provide domain-level context beyond what the messaging conventions cover.
+
+## Relationship to `@opentelemetry/instrumentation-amqplib`
+
+`@opentelemetry/instrumentation-amqplib` provides automatic low-level AMQP spans — connection events, channel operations, and raw message delivery. `withTracing` layers domain-aware spans on top with contract and service context that the amqplib instrumentation cannot provide.
+
+Both can run simultaneously. The hoppity span is the parent (carrying domain and operation context); the amqplib span is the child (carrying AMQP transport details). You get the full picture at both layers without duplication.
+
+If you are using only `withMetrics` (no tracing), you can ignore `@opentelemetry/instrumentation-amqplib` entirely — it is a separate concern.

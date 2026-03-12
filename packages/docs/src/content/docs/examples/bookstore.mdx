@@ -5,31 +5,71 @@ description: Full contract-driven multi-service demo with events, commands, and 
 
 **Location:** `examples/bookstore`
 
-A multi-service demo showing the full contract-driven development pattern with `hoppity-contracts` and `hoppity-operations`. Two services (order-service and catalog-service) communicate through events, commands, and RPC, with a runner that drives the demo flow.
+A multi-service demo showing the full contract-driven development pattern. Two services (order-service and catalog-service) communicate through events, commands, and RPC, with a runner that drives the demo flow.
 
 ## Middleware Used
 
 - `withCustomLogger` — custom logger injection
-- `withOutboundExchange` — per-service fanout exchange for observability
-- `withOperations` — typed handlers and broker methods from domain contracts
 
 ## Key Concepts
 
-- **`defineDomain`** — Shared Zod-validated contracts are the single source of truth for message schemas, exchange names, queue names, and routing keys.
-- **`buildServiceTopology`** — Each service declaratively states which contracts it publishes, subscribes to, sends, handles, calls, or responds to. The topology (exchanges, queues, bindings, publications, subscriptions) is generated automatically.
-- **`withOperations`** — Typed `broker.publishEvent()`, `broker.sendCommand()`, and `broker.request()` methods. Handlers are declared with `onEvent`, `onCommand`, and `onRpc`.
-- **Outbound exchange tapping** — `withOutboundExchange` creates a per-service fanout exchange. Other services or tools can bind to it to observe all outbound traffic without coupling.
-- **Event vs. command vs. RPC** — The example demonstrates when to use each operation type: events for broadcasting, commands for directed work, RPC for synchronous queries.
+- **`defineDomain`** — Shared Zod-validated contracts are the single source of truth for message schemas. Both services import the same contract objects from `@bookstore/contracts`.
+- **Automatic topology derivation** — Each service declares its handlers and publishes in `ServiceConfig`. Hoppity derives all exchanges, queues, bindings, publications, and subscriptions automatically. No topology files.
+- **Typed handlers** — `onEvent`, `onCommand`, and `onRpc` bind handlers to contracts. Payload types are inferred from the Zod schemas at compile time.
+- **Typed broker methods** — `broker.publishEvent()`, `broker.sendCommand()`, and `broker.request()` enforce payload types from the contracts.
+- **Event vs. command vs. RPC** — The example demonstrates when to use each: events for broadcasting facts (`orderCreated`, `orderCancelled`), commands for directed work (`cancelOrder`), RPC for synchronous queries (`createOrder`, `getOrderSummary`, `getStockLevels`).
 
 ## Project Structure
 
 ```
 examples/bookstore/
-├── bookstore-contracts/    # Shared domain contracts (Zod schemas)
-├── order-service/          # Publishes events, handles commands, responds to RPC
-├── catalog-service/        # Subscribes to events, sends commands, calls RPC
-└── runner/                 # Orchestrates the demo flow
+├── packages/
+│   ├── bookstore-contracts/   # Shared domain contracts (Zod schemas)
+│   ├── order-service/         # Handles RPCs, handles commands, publishes events
+│   └── catalog-service/       # Reacts to events, responds to RPCs
+└── runner/                    # Orchestrates the demo flow
 ```
+
+## How the Services Are Built
+
+### order-service
+
+Declares RPC handlers (`createOrder`, `getOrderSummary`), a command handler (`cancelOrder`), and publishes two events:
+
+```typescript
+const broker = await hoppity
+    .service("order-service", {
+        connection: { url: config.rabbitmq.url, vhost: config.rabbitmq.vhost },
+        handlers: [createOrderHandler, getOrderSummaryHandler, cancelOrderHandler],
+        publishes: [OrdersDomain.events.orderCreated, OrdersDomain.events.orderCancelled],
+    })
+    .use(withCustomLogger({ logger }))
+    .build();
+```
+
+### catalog-service
+
+Reacts to order events and responds to stock level queries. Only declares handlers — no explicit publishes needed because it doesn't produce messages beyond RPC responses:
+
+```typescript
+const broker = await hoppity
+    .service("catalog-service", {
+        connection: { url: config.rabbitmq.url, vhost: config.rabbitmq.vhost },
+        handlers: [onOrderCreatedHandler, onOrderCancelledHandler, getStockLevelsHandler],
+    })
+    .use(withCustomLogger({ logger }))
+    .build();
+```
+
+## Domain Contracts
+
+The `bookstore-contracts` package defines two domains:
+
+**OrdersDomain** — Events (`orderCreated`, `orderCancelled`), commands (`cancelOrder`), and RPCs (`createOrder`, `getOrderSummary`).
+
+**CatalogDomain** — A single RPC (`getStockLevels`) for stock visibility.
+
+Both services import these contracts. The contracts define the schemas once — type safety flows from contract definition through to handler payloads and broker method arguments.
 
 ## Running It
 
@@ -40,13 +80,13 @@ pnpm --filter @bookstore/runner start
 
 The runner starts both services, then drives a demo flow:
 
-1. **Create & query** — Creates an order, queries its status via RPC
-2. **Cancel & query** — Cancels the order, queries again to confirm the updated status
+1. **Create & query** — Creates an order via RPC, queries its status
+2. **Cancel & query** — Cancels the order via command, queries again to confirm the updated status
 
 ## What to Look For
 
 - Contracts in `bookstore-contracts` define the schema once — both services import and use the same contract objects
-- `buildServiceTopology` generates different topology for each service based on what it declares
-- `withOperations` wires typed handlers and provides typed outbound methods
-- The outbound exchange lets you observe all of a service's outbound traffic from RabbitMQ Management UI
+- Hoppity derives different topology for each service based on its handler and publish declarations
+- Handler payloads are fully typed from the Zod schemas — no casts, no `any`
+- RPC handlers in order-service publish events as side effects (e.g., `createOrder` publishes `orderCreated`)
 - Zod validation catches schema mismatches at runtime with clear error messages

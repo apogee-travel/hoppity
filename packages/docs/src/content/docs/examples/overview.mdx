@@ -5,7 +5,7 @@ description: Runnable example projects demonstrating hoppity patterns.
 
 import { LinkCard, CardGrid } from "@astrojs/starlight/components";
 
-Hoppity ships with four example projects in the `examples/` directory. Each demonstrates a different messaging pattern and middleware combination. All examples include Docker Compose files for RabbitMQ and work out of the box with default settings.
+Hoppity ships with example projects in the `examples/` directory. Each demonstrates a different messaging pattern. All examples work with the `docker-compose.yml` at the repo root for RabbitMQ.
 
 ## Prerequisites
 
@@ -23,12 +23,10 @@ pnpm install            # Install all workspace dependencies
 
 ## Pattern Comparison
 
-| Pattern          | Example         | When to Use                                                      |
-| ---------------- | --------------- | ---------------------------------------------------------------- |
-| Pub/Sub          | basic-pubsub    | Simple event broadcasting, decoupled consumers                   |
-| Delayed Messages | delayed-publish | Scheduled notifications, retry with backoff, deferred processing |
-| RPC              | rpc             | Synchronous request/response between services, queries           |
-| Contract-Driven  | bookstore       | Multiple services with shared domain contracts, typed messaging  |
+| Pattern         | Example      | When to Use                                                     |
+| --------------- | ------------ | --------------------------------------------------------------- |
+| Pub/Sub         | basic-pubsub | Simple event broadcasting with raw topology escape hatch        |
+| Contract-Driven | bookstore    | Multiple services with shared domain contracts, typed messaging |
 
 <CardGrid>
     <LinkCard
@@ -37,18 +35,8 @@ pnpm install            # Install all workspace dependencies
         description="Publisher sends to exchange, subscriber consumes from queue."
     />
     <LinkCard
-        title="Delayed Publish"
-        href="/hoppity/examples/delayed-publish/"
-        description="TTL-based delayed message delivery between services."
-    />
-    <LinkCard
-        title="RPC"
-        href="/hoppity/examples/rpc/"
-        description="Request/response messaging with correlation IDs."
-    />
-    <LinkCard
         title="Bookstore"
         href="/hoppity/examples/bookstore/"
-        description="Full contract-driven multi-service demo."
+        description="Full contract-driven multi-service demo with events, RPC, and middleware."
     />
 </CardGrid>

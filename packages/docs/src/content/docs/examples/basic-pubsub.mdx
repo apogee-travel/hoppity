@@ -1,22 +1,70 @@
 ---
 title: Basic Pub/Sub
-description: The simplest hoppity example — publisher and subscriber with a topic exchange.
+description: The simplest hoppity example — publisher and subscriber using the raw topology escape hatch.
 ---
 
 **Location:** `examples/basic-pubsub`
 
-The simplest hoppity example. One publisher sends messages to a topic exchange, one subscriber consumes them from a queue.
+The simplest hoppity example. One publisher sends messages to a topic exchange, one subscriber consumes them from a queue. This example uses the **raw topology escape hatch** — no contracts or handlers, just hand-written Rascal `BrokerConfig` passed directly to `hoppity.service()`.
+
+## When to Use This Pattern
+
+The escape hatch is useful for:
+
+- **Gradual migration** — Wrapping existing Rascal topologies in hoppity's builder without rewriting everything at once
+- **One-off infrastructure** — Topology that can't be derived from contracts (DLX exchanges, shovel config, etc.)
+- **Simple pub/sub** — When a service only needs to publish or subscribe to a few things and the full contract machinery is overkill
+
+For typed, contract-driven services, see the [Bookstore](/hoppity/examples/bookstore/) example.
 
 ## Middleware Used
 
 - `withCustomLogger` — custom logger injection
-- `withSubscriptions` — auto-wired subscription handlers
+
+## How It Works
+
+### Publisher
+
+The publisher defines a raw Rascal topology with just an exchange and a publication — no queues, no subscriptions. It uses `hoppity.service()` with only the `topology` field:
+
+```typescript
+const broker = await hoppity
+    .service("basic-pubsub-publisher", {
+        connection: { url: "unused" }, // connection is in the raw topology
+        topology: publisherTopology, // raw BrokerConfig
+    })
+    .use(withCustomLogger({ logger }))
+    .build();
+```
+
+Publishing is done through Rascal's standard `broker.publish()` method with the publication name from the raw topology.
+
+### Subscriber
+
+The subscriber defines the full consumer-side topology — exchange, queue, binding, and subscription — also as raw Rascal `BrokerConfig`. After `.build()`, it wires the subscription manually via Rascal's `broker.subscribe()`:
+
+```typescript
+const broker = await hoppity
+    .service("basic-pubsub-subscriber", {
+        connection: { url: "unused" },
+        topology: subscriberTopology,
+    })
+    .use(withCustomLogger({ logger }))
+    .build();
+
+// Manual subscription wiring via Rascal
+const sub = await broker.subscribe("on_event");
+sub.on("message", (message, content, ackOrNack) => {
+    void messageHandler(message, content, ackOrNack);
+});
+```
 
 ## Key Concepts
 
 - **Separate topologies** — Each service declares only the exchanges, queues, bindings, publications, and subscriptions it needs. The publisher topology defines a publication; the subscriber topology defines a subscription and queue.
-- **Subscription name mapping** — The key you pass to `withSubscriptions()` (e.g., `on_event`) must match a subscription name in the Rascal topology.
-- **Middleware ordering** — `withCustomLogger` goes first so the custom logger is available to `withSubscriptions` and the builder itself. `withSubscriptions` goes last, after the topology is finalized.
+- **Raw topology only** — No `handlers` or `publishes` in the service config, so no topology derivation occurs. The raw `BrokerConfig` is used as-is (after middleware processing).
+- **Manual subscription wiring** — Without contract-driven handlers, subscriptions are wired manually after broker creation using Rascal's native `broker.subscribe()` API.
+- **Middleware still works** — Even with raw topology, middleware like `withCustomLogger` functions normally.
 
 ## Running It
 
@@ -26,10 +74,3 @@ pnpm dev:both
 ```
 
 This starts both the publisher and subscriber. The publisher sends a message every few seconds; the subscriber logs each received message.
-
-## What to Look For
-
-- The publisher creates a broker with just a publication — no queues or subscriptions
-- The subscriber creates a broker with a queue, binding, and subscription
-- Both services use `withCustomLogger` for structured logging
-- `withSubscriptions` validates that every handler key matches a real subscription in the topology before the broker starts

@@ -1,9 +1,9 @@
 ---
 title: hoppity
-description: Pattern-driven RabbitMQ topology builder for Node.js microservices.
+description: Contract-driven RabbitMQ topology builder for Node.js microservices.
 template: splash
 hero:
-    tagline: Pattern-driven RabbitMQ topology builder for Node.js microservices, built on Rascal.
+    tagline: Contract-driven RabbitMQ topology builder for Node.js microservices, built on Rascal.
     image:
         file: ../../assets/icon-mark.svg
     actions:
@@ -20,28 +20,33 @@ hero:
 import { Card, CardGrid } from "@astrojs/starlight/components";
 
 <CardGrid>
-    <Card icon="puzzle" title="Middleware Pipeline">
-        Compose your RabbitMQ topology through a clean middleware pipeline. Each middleware receives
-        the broker config, modifies it, and optionally hooks into the broker lifecycle.
+    <Card icon="puzzle" title="Contract-Driven Topology">
+        Define domain contracts with Zod schemas. Hoppity derives all exchanges, queues, bindings,
+        publications, and subscriptions automatically. No topology files. No manual Rascal config.
     </Card>
     <Card icon="setting" title="Builder Pattern">
-        Fluent API with `withTopology().use(middleware).build()`. Define your base topology, layer
-        on middleware, get back a configured Rascal broker.
+        Fluent API with `hoppity.service(name, config).use(middleware).build()`. Declare handlers
+        and publishes, get back a fully-wired `ServiceBroker`.
     </Card>
     <Card icon="seti:typescript" title="TypeScript-First">
-        Written in TypeScript with full type safety. Strict mode, proper generics, no `any`-shaped
-        escape hatches.
+        Written in TypeScript with full type safety. Strict mode, proper generics, Zod-inferred
+        payload types from contract to handler to broker method.
     </Card>
     <Card icon="rocket" title="Built on Rascal">
-        Standing on the shoulders of a proven RabbitMQ library. Hoppity adds composable patterns on
-        top — RPC, delayed publish, subscriptions, and more.
+        Standing on the shoulders of a proven RabbitMQ library. Hoppity adds contract-driven
+        topology derivation, typed handlers, and composable middleware on top.
     </Card>
-    <Card icon="random" title="RPC Support">
-        Request/reply with correlation IDs, configurable timeouts, and automatic reply queue
-        management via `hoppity-rpc`.
+    <Card icon="random" title="Built-in RPC">
+        Request/reply with correlation IDs, configurable timeouts, automatic reply queue management,
+        and typed request/response contracts — all in core.
     </Card>
-    <Card icon="list-format" title="Delayed Publishing">
-        TTL-based delayed message delivery with dead-letter exchange routing via
-        `hoppity-delayed-publish`.
+    <Card icon="list-format" title="Middleware for Cross-Cutting Concerns">
+        Custom logging via `hoppity-logger`, or write your own middleware for any cross-cutting
+        concern. Delayed delivery is built into core via contract-level `delay` declarations.
+    </Card>
+    <Card icon="bars" title="Interceptors and Observability">
+        Wrap handler and publish execution for tracing, metrics, and header injection.
+        `hoppity-open-telemetry` ships ready-made OTel interceptors — drop in `withTracing` and
+        `withMetrics` and you are done.
     </Card>
 </CardGrid>

@@ -1,126 +1,129 @@
 ---
 title: Getting Started
-description: Install hoppity and create your first middleware pipeline.
+description: Install hoppity and build your first contract-driven service.
 ---
 
 ## Installation
 
-Install the core package and whichever middleware you need:
+Install the core package and any middleware you need:
 
 ```bash
-# Core (required)
-npm install @apogeelabs/hoppity rascal
+# Core (required) — includes contracts, handlers, topology derivation, RPC
+npm install @apogeelabs/hoppity rascal zod
 
-# Pick your middleware
-npm install @apogeelabs/hoppity-rpc
-npm install @apogeelabs/hoppity-delayed-publish
-npm install @apogeelabs/hoppity-subscriptions
+# Middleware (optional)
 npm install @apogeelabs/hoppity-logger
-
-# For contract-driven development (optional)
-npm install @apogeelabs/hoppity-contracts @apogeelabs/hoppity-operations zod
 ```
 
 :::note
-`rascal@^20.1.1` is a peer dependency of all hoppity packages. You need to install it directly in your project.
+`rascal@^20.1.1` is a peer dependency of all hoppity packages. `zod@^3.x` is required for defining contract schemas. You need to install both directly in your project.
 :::
 
-## Basic Usage
+## Define a Domain
 
-Define a base Rascal topology and run it through the hoppity pipeline:
+Contracts are the single source of truth. Define events, commands, and RPC operations with Zod schemas:
 
 ```typescript
-import hoppity from "@apogeelabs/hoppity";
+import { z } from "zod";
+import { defineDomain } from "@apogeelabs/hoppity";
 
-const topology = {
-    vhosts: {
-        "/": {
-            connection: {
-                url: "amqp://guest:guest@localhost:5672",
-            },
-            exchanges: {
-                events: {
-                    type: "topic",
-                },
-            },
-            queues: {
-                "my-service-queue": {},
-            },
-            bindings: {
-                "events-to-queue": {
-                    source: "events",
-                    destination: "my-service-queue",
-                    bindingKey: "order.#",
-                },
-            },
-            publications: {
-                "publish-event": {
-                    exchange: "events",
-                },
-            },
-            subscriptions: {
-                "listen-for-orders": {
-                    queue: "my-service-queue",
-                },
-            },
+export const OrdersDomain = defineDomain("orders", {
+    events: {
+        orderCreated: z.object({
+            orderId: z.string(),
+            total: z.number(),
+        }),
+    },
+    commands: {
+        cancelOrder: z.object({ orderId: z.string() }),
+    },
+    rpc: {
+        getOrderSummary: {
+            request: z.object({ orderId: z.string() }),
+            response: z.object({ orderId: z.string(), status: z.string(), total: z.number() }),
         },
     },
-};
-
-const broker = await hoppity.withTopology(topology).build();
+});
 ```
 
-## Adding Middleware
+The returned `OrdersDomain` object contains typed contract objects for each operation. These carry all naming conventions — exchange names, routing keys, publication/subscription names — so you never deal with string literals.
 
-The real power is in composing middleware. Each `.use()` call adds a middleware to the pipeline:
+## Create Handlers
+
+Handlers declare what your service processes. Each handler is bound to a contract:
+
+```typescript
+import { onEvent, onCommand, onRpc } from "@apogeelabs/hoppity";
+import { OrdersDomain } from "./contracts";
+
+const cancelOrderHandler = onCommand(
+    OrdersDomain.commands.cancelOrder,
+    async ({ orderId }, { broker }) => {
+        // Handle the command — orderId is typed from the Zod schema
+        await broker.publishEvent(OrdersDomain.events.orderCreated, {
+            orderId,
+            total: 0,
+        });
+    }
+);
+
+const getOrderSummaryHandler = onRpc(OrdersDomain.rpc.getOrderSummary, async ({ orderId }) => {
+    // Return type is enforced by the response schema
+    return { orderId, status: "active", total: 42.0 };
+});
+```
+
+Handler payloads are typed via `z.infer` from the contract's schema. The `context.broker` gives handlers access to typed outbound methods for publishing events, sending commands, or making RPC calls.
+
+## Build the Service
+
+Pass handlers and publish declarations to `hoppity.service()`, add any middleware, and call `.build()`:
 
 ```typescript
 import hoppity from "@apogeelabs/hoppity";
 import { withCustomLogger } from "@apogeelabs/hoppity-logger";
-import { withRpcSupport } from "@apogeelabs/hoppity-rpc";
-import { randomUUID } from "crypto";
 
 const broker = await hoppity
-    .withTopology(topology)
-    .use(withCustomLogger({ logger: myLogger })) // logger first — used by downstream middleware
-    .use(withRpcSupport({ serviceName: "my-svc", instanceId: randomUUID() }))
+    .service("order-service", {
+        connection: {
+            url: process.env.RABBITMQ_URL ?? "amqp://localhost",
+            vhost: "/",
+            options: { heartbeat: 10 },
+            retry: { factor: 2, min: 1000, max: 5000 },
+        },
+        handlers: [cancelOrderHandler, getOrderSummaryHandler],
+        publishes: [OrdersDomain.events.orderCreated],
+    })
+    .use(withCustomLogger({ logger: myLogger }))
     .build();
 ```
 
-:::tip
-Order matters. `withCustomLogger` should go first so downstream middleware uses your custom logger. Subscription middleware should typically go last, after the topology is finalized.
-:::
+That's it. Hoppity derives the full Rascal topology from your handlers and publish declarations — exchanges, queues, bindings, publications, and subscriptions — creates the broker, wires handlers, and attaches typed outbound methods.
 
-## Writing Custom Middleware
+## Use the Broker
 
-A middleware is a function that receives the current topology and a shared context:
+The returned `ServiceBroker` extends Rascal's `BrokerAsPromised` with typed methods:
 
 ```typescript
-import type { MiddlewareFunction } from "@apogeelabs/hoppity";
+// Publish a typed event
+await broker.publishEvent(OrdersDomain.events.orderCreated, {
+    orderId: "ord-123",
+    total: 99.99,
+});
 
-const myMiddleware: MiddlewareFunction = (topology, context) => {
-    context.logger.info("My middleware is running");
+// Make a typed RPC call
+const summary = await broker.request(OrdersDomain.rpc.getOrderSummary, {
+    orderId: "ord-123",
+});
+// summary is typed as { orderId: string; status: string; total: number }
 
-    // Modify the topology
-    const modified = {
-        ...topology,
-        // your changes here
-    };
-
-    return {
-        topology: modified,
-        // Optional: run after broker is created
-        onBrokerCreated: async broker => {
-            context.logger.info("Broker is ready");
-        },
-    };
-};
-
-const broker = await hoppity.withTopology(topology).use(myMiddleware).build();
+// Shut down cleanly (drains pending RPC requests)
+await broker.shutdown();
 ```
 
 ## Next Steps
 
-- Read the [Concepts](/hoppity/guide/concepts/) guide for a deep dive into the middleware pipeline, three-phase execution, and topology patterns
-- Browse the [Examples](/hoppity/examples/overview/) to see runnable demos of pub/sub, delayed publish, RPC, and contract-driven development
+- Read the [Concepts](/hoppity/guide/concepts/) guide for a deep dive into middleware, the seven build phases, and naming conventions
+- Read the [Interceptors](/hoppity/guide/interceptors/) guide for tracing, metrics, and per-message cross-cutting concerns
+- Browse the [Examples](/hoppity/examples/overview/) to see runnable demos of pub/sub and contract-driven multi-service patterns
 - Check the API reference in the sidebar for full type documentation

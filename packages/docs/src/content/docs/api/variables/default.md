@@ -7,9 +7,19 @@ title: "default"
 
 > `const` **default**: [`Hoppity`](/hoppity/api/interfaces/hoppity/)
 
-Defined in: [hoppity.ts:11](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity/src/hoppity.ts#L11)
+Defined in: [packages/hoppity/src/hoppity.ts:19](https://github.com/apogee-travel/hoppity/blob/116ad649c2e29714e173c4ca41b19c4ffff2fa39/packages/hoppity/src/hoppity.ts#L19)
 
-Implementation of the Rascal wrapper that provides the main API for the middleware pipeline.
+Entry point for hoppity. Create a service, chain middleware, build.
 
-This object serves as the primary entry point for using the enhanced Rascal functionality.
-It provides a fluent API for building complex broker configurations with middleware.
+## Example
+
+```typescript
+const broker = await hoppity
+    .service("order-service", {
+        connection: { url: "amqp://localhost" },
+        handlers: [createOrderHandler],
+        publishes: [OrdersDomain.events.orderCreated],
+    })
+    .use(withCustomLogger({ logger }))
+    .build();
+```

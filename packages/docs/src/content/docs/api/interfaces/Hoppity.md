@@ -5,61 +5,39 @@ prev: false
 title: "Hoppity"
 ---
 
-Defined in: [types.ts:13](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity/src/types.ts#L13)
+Defined in: [packages/hoppity/src/types.ts:13](https://github.com/apogee-travel/hoppity/blob/116ad649c2e29714e173c4ca41b19c4ffff2fa39/packages/hoppity/src/types.ts#L13)
 
-Main interface for the Rascal wrapper that provides the entry point to the middleware pipeline.
+Entry point interface for hoppity.
 
-This wrapper provides two main entry points:
-
-1. `withTopology()` - Start with an existing topology configuration
-2. `use()` - Start with an empty topology and add middleware
-
-RascalWrapper
+Hoppity
 
 ## Methods
 
-### use()
+### service()
 
-> **use**(`middleware`): [`BuilderInterface`](/hoppity/api/interfaces/builderinterface/)
+> **service**(`serviceName`, `config`): [`ServiceBuilder`](/hoppity/api/classes/servicebuilder/)
 
-Defined in: [types.ts:28](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity/src/types.ts#L28)
+Defined in: [packages/hoppity/src/types.ts:22](https://github.com/apogee-travel/hoppity/blob/116ad649c2e29714e173c4ca41b19c4ffff2fa39/packages/hoppity/src/types.ts#L22)
 
-Creates a builder instance with an empty topology and adds the first middleware.
-
-#### Parameters
-
-##### middleware
-
-[`MiddlewareFunction`](/hoppity/api/type-aliases/middlewarefunction/)
-
-The first middleware to add
-
-#### Returns
-
-[`BuilderInterface`](/hoppity/api/interfaces/builderinterface/)
-
-- Builder instance for chaining additional middleware
-
----
-
-### withTopology()
-
-> **withTopology**(`topology`): [`BuilderInterface`](/hoppity/api/interfaces/builderinterface/)
-
-Defined in: [types.ts:20](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity/src/types.ts#L20)
-
-Creates a builder instance with an initial topology configuration.
+Creates a contract-driven service builder. Handlers and publish declarations
+are the topology — everything is derived automatically.
 
 #### Parameters
 
-##### topology
+##### serviceName
 
-`BrokerConfig`
+`string`
 
-Initial topology configuration
+The service identifier, used for queue naming
+
+##### config
+
+[`ServiceConfig`](/hoppity/api/interfaces/serviceconfig/)
+
+Connection, handlers, publishes, and optional raw topology
 
 #### Returns
 
-[`BuilderInterface`](/hoppity/api/interfaces/builderinterface/)
+[`ServiceBuilder`](/hoppity/api/classes/servicebuilder/)
 
-- Builder instance for chaining middleware
+- Builder instance for chaining middleware and calling .build()

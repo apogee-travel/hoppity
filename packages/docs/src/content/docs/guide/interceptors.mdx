@@ -1,0 +1,338 @@
+---
+title: Interceptors
+description: Wrap handler and publish execution for telemetry, tracing, metrics, and cross-cutting per-message concerns.
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components";
+
+Interceptors wrap inbound handler execution and outbound publish calls. They are the extension point for telemetry, distributed tracing, metrics, header injection, and any concern that needs to observe or modify individual message processing.
+
+## What Interceptors Are For
+
+Middleware runs once during service setup — it modifies topology and runs lifecycle hooks. Interceptors run for every message. That's the distinction:
+
+|              | Middleware (`.use()`)                     | Interceptors                            |
+| ------------ | ----------------------------------------- | --------------------------------------- |
+| **When**     | Before broker creation                    | During message processing               |
+| **What**     | Modifies topology, lifecycle hooks        | Wraps handler/publish execution         |
+| **Scope**    | Service-level setup                       | Per-message                             |
+| **Examples** | Custom logger, delayed delivery topology  | Tracing, metrics, header injection      |
+| **API**      | `(topology, context) => MiddlewareResult` | `(handler, metadata) => wrappedHandler` |
+
+If you're asking "should this be middleware or an interceptor?" — if it needs to run for every message, it's an interceptor. If it runs once at startup, it's middleware.
+
+## The Interceptor Interface
+
+```typescript
+interface Interceptor {
+    /** Name for logging and debugging — required, must be non-empty */
+    name: string;
+    /** Wraps handler execution for events, commands, and RPC responders */
+    inbound?: InboundWrapper;
+    /** Wraps publish calls for publishEvent, sendCommand, and request */
+    outbound?: OutboundWrapper;
+}
+```
+
+Both directions are optional. An interceptor can implement `inbound` only, `outbound` only, or both.
+
+### InboundWrapper
+
+```typescript
+type InboundWrapper = (
+    handler: (payload: any, context: HandlerContext) => Promise<any>,
+    metadata: InboundMetadata
+) => (payload: any, context: HandlerContext) => Promise<any>;
+```
+
+An `InboundWrapper` receives the handler (or the next wrapper in the chain) and per-message metadata. It returns a new function with the same signature — the wrapper IS the handler as far as the caller is concerned.
+
+### OutboundWrapper
+
+```typescript
+type OutboundWrapper = (
+    publish: (message: any, overrides?: PublicationConfig) => Promise<any>,
+    metadata: OutboundMetadata
+) => (message: any, overrides?: PublicationConfig) => Promise<any>;
+```
+
+Same shape. Receives the inner publish function and call-site metadata. Returns a replacement publish function.
+
+### InboundMetadata
+
+```typescript
+interface InboundMetadata {
+    /** The contract this handler is bound to */
+    contract: EventContract | CommandContract | RpcContract;
+    /** Operation kind — drives span naming and metric labels */
+    kind: "event" | "command" | "rpc";
+    /** The service name from hoppity.service() */
+    serviceName: string;
+    /** AMQP message surface — headers for trace context extraction */
+    message: {
+        headers: Record<string, any>;
+        properties: Record<string, any>;
+    };
+}
+```
+
+`message.headers` is where distributed tracing propagates — `traceparent`, `tracestate`, and custom correlation headers live here. This is the only way wrappers can access AMQP message headers, since the handler signature itself (`payload, context`) intentionally hides AMQP details.
+
+Metadata is built per-message, so `message.headers` reflects the actual incoming message each time.
+
+### OutboundMetadata
+
+```typescript
+interface OutboundMetadata {
+    /** The contract being published to */
+    contract: EventContract | CommandContract | RpcContract;
+    /** Operation kind — drives span naming and metric labels */
+    kind: "event" | "command" | "rpc";
+    /** The service name from hoppity.service() */
+    serviceName: string;
+}
+```
+
+Outbound metadata does not include message headers — those are outgoing, so the wrapper injects them via `overrides.options.headers`.
+
+## Configuration
+
+Pass interceptors in the `ServiceConfig.interceptors` array:
+
+```typescript
+import hoppity from "@apogeelabs/hoppity";
+import { withTracing, withMetrics } from "@apogeelabs/hoppity-open-telemetry";
+
+const broker = await hoppity
+    .service("order-service", {
+        connection: { url: process.env.RABBITMQ_URL! },
+        handlers: [cancelOrderHandler, getOrderSummaryHandler],
+        publishes: [OrdersDomain.events.orderCreated],
+        interceptors: [withTracing, withMetrics],
+    })
+    .use(withCustomLogger({ logger }))
+    .build();
+```
+
+Interceptors are wired at build time. They cannot be added or removed after `.build()` returns.
+
+## Composition and Ordering
+
+For `interceptors: [A, B]`, the call chain is:
+
+```
+A → B → handler → B → A
+```
+
+The first interceptor in the array is the outermost wrapper. Unwinding on return or throw goes back out through B, then A. This is the standard onion model — the array order matches the wrapping order you'd read left-to-right.
+
+**Inbound composition** happens per-message. Because `InboundMetadata.message.headers` varies per message, the wrapper chain is rebuilt on each delivery. The overhead is nanoseconds relative to AMQP I/O.
+
+**Outbound composition** happens per-call, inside `publishEvent`, `sendCommand`, and `request`. The contract argument is only known at call time, so there's no way to pre-compose outbound wrappers.
+
+## OpenTelemetry
+
+The [`hoppity-open-telemetry`](/hoppity/packages/hoppity-open-telemetry/) package provides ready-made tracing and metrics interceptors. If you are integrating with OTel, use those rather than building your own.
+
+```typescript
+import hoppity from "@apogeelabs/hoppity";
+import { withTracing, withMetrics } from "@apogeelabs/hoppity-open-telemetry";
+
+const broker = await hoppity
+    .service("order-service", {
+        connection: { url: process.env.RABBITMQ_URL! },
+        handlers: [cancelOrderHandler, getOrderSummaryHandler],
+        publishes: [OrdersDomain.events.orderCreated],
+        interceptors: [withTracing, withMetrics],
+    })
+    .build();
+```
+
+Both interceptors are dual-use — place them directly in the array for defaults, or call them as factories to configure tracer/meter names, span prefix, or histogram bucket boundaries. See the [hoppity-open-telemetry package reference](/hoppity/packages/hoppity-open-telemetry/) for the full options and attribute reference.
+
+## Examples
+
+### Handler Timing (inbound only)
+
+```typescript
+const withHandlerTiming: Interceptor = {
+    name: "handler-timing",
+    inbound: (handler, meta) => async (payload, ctx) => {
+        const start = performance.now();
+        try {
+            return await handler(payload, ctx);
+        } finally {
+            console.log(
+                `${meta.contract._name} handled in ${(performance.now() - start).toFixed(2)}ms`
+            );
+        }
+    },
+};
+```
+
+The `try/finally` guarantees the timing log runs regardless of success or error. The error still propagates — the interceptor observes, it doesn't swallow.
+
+### Correlation Header Injection (outbound only)
+
+```typescript
+const withCorrelationHeaders: Interceptor = {
+    name: "correlation-headers",
+    outbound: (publish, meta) => async (message, overrides) => {
+        return publish(message, {
+            ...overrides,
+            options: {
+                ...overrides?.options,
+                headers: {
+                    ...overrides?.options?.headers,
+                    "x-source-service": meta.serviceName,
+                    "x-source-domain": meta.contract._domain,
+                },
+            },
+        });
+    },
+};
+```
+
+Spread carefully — `overrides` may be undefined, and `overrides.options.headers` may already have entries you don't want to clobber.
+
+### Bidirectional Tracing (without the package)
+
+If you need tracing behavior different from what `withTracing` provides, here is what a custom tracing interceptor looks like using `@opentelemetry/api` directly:
+
+```typescript
+import { context, propagation, trace, SpanKind, SpanStatusCode } from "@opentelemetry/api";
+
+const withCustomTracing: Interceptor = {
+    name: "custom-tracing",
+
+    inbound: (handler, meta) => async (payload, ctx) => {
+        // Extract parent context from AMQP headers so this span becomes a
+        // child of the publisher's span rather than a new root.
+        const parentCtx = propagation.extract(context.active(), meta.message.headers);
+        const tracer = trace.getTracer("my-service");
+        const spanName = `${meta.kind}:${meta.contract._domain}.${meta.contract._name}`;
+
+        return tracer.startActiveSpan(
+            spanName,
+            { kind: SpanKind.CONSUMER },
+            parentCtx,
+            async span => {
+                try {
+                    const result = await handler(payload, ctx);
+                    span.setStatus({ code: SpanStatusCode.OK });
+                    return result;
+                } catch (err) {
+                    span.recordException(err as Error);
+                    span.setStatus({ code: SpanStatusCode.ERROR });
+                    throw err;
+                } finally {
+                    span.end();
+                }
+            }
+        );
+    },
+
+    outbound: (publish, meta) => async (message, overrides) => {
+        const tracer = trace.getTracer("my-service");
+        const spanName = `publish:${meta.contract._domain}.${meta.contract._name}`;
+
+        return tracer.startActiveSpan(spanName, { kind: SpanKind.PRODUCER }, async span => {
+            // Inject current trace context into AMQP headers so the
+            // downstream consumer can extract and link its span as a child.
+            const headers: Record<string, string> = {};
+            propagation.inject(context.active(), headers);
+
+            try {
+                return await publish(message, {
+                    ...overrides,
+                    options: {
+                        ...overrides?.options,
+                        headers: { ...overrides?.options?.headers, ...headers },
+                    },
+                });
+            } catch (err) {
+                span.recordException(err as Error);
+                span.setStatus({ code: SpanStatusCode.ERROR });
+                throw err;
+            } finally {
+                span.end();
+            }
+        });
+    },
+};
+```
+
+### Short-Circuiting a Publish
+
+Outbound wrappers can prevent the publish entirely — useful for dry-run modes or feature flags:
+
+```typescript
+const withDryRun: Interceptor = {
+    name: "dry-run",
+    outbound: (publish, meta) => async (message, overrides) => {
+        if (process.env.DRY_RUN === "true") {
+            console.log(`[dry-run] would publish ${meta.contract._name}`, message);
+            return; // inner publish is never called
+        }
+        return publish(message, overrides);
+    },
+};
+```
+
+## RPC Support
+
+Interceptors apply to both sides of RPC:
+
+- **RPC responder (inbound):** The handler registered with `onRpc()` is wrapped the same as event and command handlers. `meta.kind` is `"rpc"`. The wrapper sees the unwrapped request payload — the `RpcRequest` envelope is extracted before the wrapper chain runs.
+- **RPC caller (outbound):** `broker.request()` is wrapped the same as `publishEvent` and `sendCommand`. `meta.kind` is `"rpc"`. The wrapper wraps the publish of the request.
+
+RPC response processing — the reply queue subscription and correlation ID resolution — is internal framework plumbing and is not intercepted. `@opentelemetry/instrumentation-amqplib` covers that layer if you need it.
+
+## One-Directional Interceptors
+
+Interceptors with only `inbound` or only `outbound` are valid. The framework skips the missing direction without error.
+
+<Tabs>
+<TabItem label="Inbound only">
+
+```typescript
+const withInboundLogging: Interceptor = {
+    name: "inbound-logging",
+    inbound: (handler, meta) => async (payload, ctx) => {
+        console.log(`Received ${meta.kind}:${meta.contract._name} on ${meta.serviceName}`);
+        return handler(payload, ctx);
+    },
+    // no outbound — framework skips outbound wrapping for this interceptor
+};
+```
+
+</TabItem>
+<TabItem label="Outbound only">
+
+```typescript
+const withOutboundLogging: Interceptor = {
+    name: "outbound-logging",
+    outbound: (publish, meta) => async (message, overrides) => {
+        console.log(`Publishing ${meta.kind}:${meta.contract._name} from ${meta.serviceName}`);
+        return publish(message, overrides);
+    },
+    // no inbound — framework skips inbound wrapping for this interceptor
+};
+```
+
+</TabItem>
+</Tabs>
+
+## Relationship to `@opentelemetry/instrumentation-amqplib`
+
+`@opentelemetry/instrumentation-amqplib` provides automatic low-level AMQP spans — connection events, channel operations, raw message delivery. Hoppity interceptors layer domain-aware spans on top.
+
+Both can run simultaneously. The Hoppity span is the parent (it carries domain and operation context), the amqplib span is the child (it carries AMQP transport details). You get the full picture without duplication.
+
+## Troubleshooting
+
+**"Interceptor must have a name"** — Every interceptor requires a non-empty `name`. The builder validates this and throws early so you don't get a confusing runtime error later.
+
+**Interceptor order is wrong** — Array order is wrapping order. `[A, B]` means A is outermost: A runs first on the way in, A runs last on the way out. If you need B to run first, reverse the array.
+
+**Wrapper swallowed an error** — If your `finally` block throws, the original error may be masked. Keep `finally` blocks simple and defensive. The framework does not add any extra safety net around wrapper invocations — that responsibility is the wrapper's.

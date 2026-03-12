@@ -7,10 +7,10 @@ title: "BrokerWithExtensions"
 
 > **BrokerWithExtensions**\<`T`\> = `BrokerAsPromised` & `UnionToIntersection`\<`T`\[`number`\]\>
 
-Defined in: [types.ts:218](https://github.com/apogee-travel/hoppity/blob/81be1585ced51f77543aa03d03ab298c040554f3/packages/hoppity/src/types.ts#L218)
+Defined in: [packages/hoppity/src/types.ts:193](https://github.com/apogee-travel/hoppity/blob/116ad649c2e29714e173c4ca41b19c4ffff2fa39/packages/hoppity/src/types.ts#L193)
 
 Utility type for combining a Rascal broker with extension methods added by middleware.
-Middleware like `hoppity-rpc` and `hoppity-delayed-publish` monkey-patch extra methods
+Middleware like `hoppity-logger` can monkey-patch extra methods
 onto the broker in their `onBrokerCreated` callbacks. This type makes those extensions
 type-safe by intersecting the base `BrokerAsPromised` with each extension record.
 
