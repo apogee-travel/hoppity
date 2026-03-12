@@ -7,10 +7,6 @@ description: Full contract-driven multi-service demo with events, commands, and 
 
 A multi-service demo showing the full contract-driven development pattern. Two services (order-service and catalog-service) communicate through events, commands, and RPC, with a runner that drives the demo flow.
 
-## Middleware Used
-
-- `withCustomLogger` — custom logger injection
-
 ## Key Concepts
 
 - **`defineDomain`** — Shared Zod-validated contracts are the single source of truth for message schemas. Both services import the same contract objects from `@bookstore/contracts`.
@@ -42,8 +38,8 @@ const broker = await hoppity
         connection: { url: config.rabbitmq.url, vhost: config.rabbitmq.vhost },
         handlers: [createOrderHandler, getOrderSummaryHandler, cancelOrderHandler],
         publishes: [OrdersDomain.events.orderCreated, OrdersDomain.events.orderCancelled],
+        logger,
     })
-    .use(withCustomLogger({ logger }))
     .build();
 ```
 
@@ -56,8 +52,8 @@ const broker = await hoppity
     .service("catalog-service", {
         connection: { url: config.rabbitmq.url, vhost: config.rabbitmq.vhost },
         handlers: [onOrderCreatedHandler, onOrderCancelledHandler, getStockLevelsHandler],
+        logger,
     })
-    .use(withCustomLogger({ logger }))
     .build();
 ```
 

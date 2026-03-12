@@ -1,5 +1,4 @@
 import hoppity from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 import { BrokerAsPromised } from "rascal";
 import { logger } from "../../logger";
 import { messageHandler } from "./handlers/messageHandler";
@@ -22,8 +21,8 @@ export async function getBroker(): Promise<BrokerAsPromised> {
         .service("basic-pubsub-subscriber", {
             connection: { url: "unused" },
             topology: subscriberTopology,
+            logger,
         })
-        .use(withCustomLogger({ logger }))
         .build();
 
     // Wire subscription directly — no withSubscriptions middleware needed

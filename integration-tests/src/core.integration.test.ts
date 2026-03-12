@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import hoppity, { MiddlewareFunction, ServiceBroker } from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 import { BrokerConfig } from "rascal";
 import { createTestTopology } from "./helpers/createTestTopology";
 import { waitForMessage } from "./helpers/waitForMessage";
@@ -108,8 +107,11 @@ describe("core: builder -> real broker -> real topology", () => {
             const baseTopology = createTestTopology();
 
             broker = await hoppity
-                .service("core-mw-test", { connection: { url: "unused" }, topology: baseTopology })
-                .use(withCustomLogger({ logger: silentLogger }))
+                .service("core-mw-test", {
+                    connection: { url: "unused" },
+                    topology: baseTopology,
+                    logger: silentLogger,
+                })
                 .use(addTopology)
                 .build();
 

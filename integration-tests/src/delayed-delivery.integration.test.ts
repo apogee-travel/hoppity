@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import hoppity, { defineDomain, onEvent, ServiceBroker } from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 import { z } from "zod";
 import { silentLogger } from "./helpers/silentLogger";
 
@@ -42,8 +41,8 @@ describe("delayed-delivery: message arrives after TTL expiry", () => {
                             }),
                         ],
                         publishes: [TestDomain.events.delayedOrder],
+                        logger: silentLogger,
                     })
-                    .use(withCustomLogger({ logger: silentLogger }))
                     .build()
                     .then(async b => {
                         broker = b;
@@ -107,8 +106,8 @@ describe("delayed-delivery: message arrives after TTL expiry", () => {
                             }),
                         ],
                         publishes: [TestDomain.events.delayedOrder],
+                        logger: silentLogger,
                     })
-                    .use(withCustomLogger({ logger: silentLogger }))
                     .build()
                     .then(async b => {
                         broker = b;
@@ -173,8 +172,8 @@ describe("delayed-delivery: message arrives after TTL expiry", () => {
                             }),
                         ],
                         publishes: [TestDomain.events.delayedOrder],
+                        logger: silentLogger,
                     })
-                    .use(withCustomLogger({ logger: silentLogger }))
                     .build()
                     .then(async b => {
                         broker = b;

@@ -7,7 +7,7 @@ title: "InboundWrapper"
 
 > **InboundWrapper** = (`handler`, `metadata`) => (`payload`, `context`) => `Promise`\<`any`\>
 
-Defined in: packages/hoppity/src/interceptors/types.ts:49
+Defined in: [packages/hoppity/src/interceptors/types.ts:49](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/interceptors/types.ts#L49)
 
 Wraps a handler function. Receives the original handler and per-message metadata.
 Returns a replacement handler with the same signature.

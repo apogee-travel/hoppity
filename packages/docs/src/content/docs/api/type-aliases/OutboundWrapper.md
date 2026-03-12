@@ -7,7 +7,7 @@ title: "OutboundWrapper"
 
 > **OutboundWrapper** = (`publish`, `metadata`) => (`message`, `overrides?`) => `Promise`\<`any`\>
 
-Defined in: packages/hoppity/src/interceptors/types.ts:63
+Defined in: [packages/hoppity/src/interceptors/types.ts:63](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/interceptors/types.ts#L63)
 
 Wraps a publish function. Receives the inner publish and metadata about
 the contract being published to. Returns a replacement publish with the same signature.

@@ -5,7 +5,7 @@ The simplest hoppity example -- a publisher sends messages to an exchange, a sub
 ## What This Demonstrates
 
 - `hoppity.service(name, { topology })` -- the raw topology escape hatch (no contract-driven derivation)
-- `withCustomLogger()` -- injecting a custom logger via `@apogeelabs/hoppity-logger`
+- `logger` in `ServiceConfig` -- injecting a custom logger directly
 - Manual `broker.subscribe()` -- wiring subscription handlers directly via Rascal's API
 - Rascal topology configuration (exchanges, queues, bindings, publications, subscriptions)
 - Separate publisher/subscriber topologies -- each service declares only what it needs
@@ -71,7 +71,7 @@ Messages publish every 3 seconds by default (configurable via `PUBLISH_INTERVAL`
 
 4. **Message handler** (`src/subscriber/messaging/handlers/messageHandler.ts`) -- receives the raw AMQP message, parsed content (Rascal handles JSON deserialization), and an `ackOrNack` callback. This is a Rascal-level handler, not a hoppity contract handler.
 
-5. **Middleware ordering** -- `withCustomLogger` runs first so hoppity internals and any downstream middleware log through the custom logger.
+5. **Logger config** -- `logger` is passed in `ServiceConfig` so hoppity internals and all middleware log through the custom logger from the start.
 
 ## Architecture
 

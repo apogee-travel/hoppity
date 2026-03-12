@@ -9,7 +9,6 @@ Handlers and publish declarations ARE the topology. You declare what your servic
 | Package | npm / Import Path | Version | Description |
 |---------|-------------------|---------|-------------|
 | hoppity | `@apogeelabs/hoppity` | 1.0.0 | Core — contracts, handlers, topology derivation, broker wiring, middleware pipeline, interceptors |
-| hoppity-logger | `@apogeelabs/hoppity-logger` | 1.0.0 | Custom logger injection (Winston, Pino, etc.) into middleware context (middleware) |
 | hoppity-open-telemetry | `@apogeelabs/hoppity-open-telemetry` | 0.1.0 | Tracing and metrics interceptors via OpenTelemetry API |
 
 All packages require Node >= 22. All produce CJS, ESM, and type declarations.
@@ -62,8 +61,6 @@ const broker = await hoppity
 | `.ai/UnitTestExamples.md` | Working unit test examples |
 | `packages/hoppity/README.md` | Core package documentation |
 | `packages/hoppity/llms-usage.md` | Core package LLM usage guide |
-| `packages/hoppity-logger/README.md` | Logger middleware documentation |
-| `packages/hoppity-logger/llms-usage.md` | Logger middleware LLM usage guide |
 | `examples/basic-pubsub/README.md` | Basic pub/sub example documentation |
 | `examples/basic-pubsub/llms-usage.md` | Basic pub/sub example LLM usage guide |
 | `examples/bookstore/README.md` | Bookstore multi-service example (contracts, events, RPC, middleware) |

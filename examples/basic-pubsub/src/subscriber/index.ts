@@ -6,8 +6,8 @@ import { getBroker } from "./messaging/broker";
  *
  * Demonstrates consuming messages with hoppity:
  * 1. withTopology() to declare exchanges, queues, bindings, and subscriptions
- * 2. withCustomLogger() for custom logger injection
- * 3. withSubscriptions() to auto-wire handlers to subscription queues
+ * 2. logger in ServiceConfig for custom logger injection
+ * 3. manual subscribe() calls to wire handlers to subscription queues
  *
  * Unlike the publisher, the subscriber doesn't need a publish loop — the
  * `withSubscriptions` middleware wires up message handlers during the

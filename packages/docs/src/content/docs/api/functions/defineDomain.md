@@ -7,7 +7,7 @@ title: "defineDomain"
 
 > **defineDomain**\<`TDomain`, `TEvents`, `TCommands`, `TRpc`\>(`domainName`, `definition`): [`DomainDefinition`](/hoppity/api/interfaces/domaindefinition/)\<`TDomain`, `TEvents`, `TCommands`, `TRpc`\>
 
-Defined in: packages/hoppity/src/contracts/defineDomain.ts:50
+Defined in: [packages/hoppity/src/contracts/defineDomain.ts:50](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/contracts/defineDomain.ts#L50)
 
 Defines a domain and returns typed contract objects for all its operations.
 

@@ -12,7 +12,6 @@ This is the escape hatch for services that don't use `defineDomain` contracts. F
 
 ```typescript
 import hoppity from "@apogeelabs/hoppity"; // Core builder
-import { withCustomLogger } from "@apogeelabs/hoppity-logger"; // Logger middleware
 import { BrokerConfig, BrokerAsPromised } from "rascal"; // Underlying broker types
 ```
 
@@ -118,15 +117,14 @@ The publisher uses `hoppity.service()` with the raw topology escape hatch -- no 
 
 ```typescript
 import hoppity from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 import { BrokerAsPromised } from "rascal";
 
 const broker: BrokerAsPromised = await hoppity
     .service("basic-pubsub-publisher", {
         connection: { url: "unused" }, // Connection is in the topology
         topology: publisherTopology,
+        logger,
     })
-    .use(withCustomLogger({ logger }))
     .build();
 
 // Publish a message (publication name must match topology)
@@ -144,8 +142,8 @@ const broker: BrokerAsPromised = await hoppity
     .service("basic-pubsub-subscriber", {
         connection: { url: "unused" },
         topology: subscriberTopology,
+        logger,
     })
-    .use(withCustomLogger({ logger }))
     .build();
 
 // Wire subscription manually -- Rascal-level handler
@@ -180,9 +178,9 @@ process.on("SIGTERM", shutdown);
 | Connection heartbeat | `10` seconds        | Detects dead connections faster than the default                                               |
 | Connection retry     | exponential backoff | Handles transient RabbitMQ unavailability                                                      |
 
-## Middleware Ordering
+## Custom Logger
 
-`withCustomLogger` runs first so all hoppity internals and any downstream middleware log through the custom logger. In this example it's the only middleware, but if you add more, keep it first.
+Pass `logger` directly in `ServiceConfig`. It takes effect before the build pipeline starts — no middleware ordering concerns.
 
 ## Name Mapping
 

@@ -5,7 +5,7 @@ prev: false
 title: "RpcRequest"
 ---
 
-Defined in: packages/hoppity/src/broker/rpc.ts:13
+Defined in: [packages/hoppity/src/broker/rpc.ts:13](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/rpc.ts#L13)
 
 ## Properties
 
@@ -13,7 +13,7 @@ Defined in: packages/hoppity/src/broker/rpc.ts:13
 
 > **correlationId**: `string`
 
-Defined in: packages/hoppity/src/broker/rpc.ts:14
+Defined in: [packages/hoppity/src/broker/rpc.ts:14](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/rpc.ts#L14)
 
 ---
 
@@ -21,7 +21,7 @@ Defined in: packages/hoppity/src/broker/rpc.ts:14
 
 > `optional` **headers**: `Record`\<`string`, `any`\>
 
-Defined in: packages/hoppity/src/broker/rpc.ts:18
+Defined in: [packages/hoppity/src/broker/rpc.ts:18](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/rpc.ts#L18)
 
 ---
 
@@ -29,7 +29,7 @@ Defined in: packages/hoppity/src/broker/rpc.ts:18
 
 > **payload**: `any`
 
-Defined in: packages/hoppity/src/broker/rpc.ts:16
+Defined in: [packages/hoppity/src/broker/rpc.ts:16](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/rpc.ts#L16)
 
 ---
 
@@ -37,7 +37,7 @@ Defined in: packages/hoppity/src/broker/rpc.ts:16
 
 > **replyTo**: `string`
 
-Defined in: packages/hoppity/src/broker/rpc.ts:17
+Defined in: [packages/hoppity/src/broker/rpc.ts:17](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/rpc.ts#L17)
 
 ---
 
@@ -45,4 +45,4 @@ Defined in: packages/hoppity/src/broker/rpc.ts:17
 
 > **rpcName**: `string`
 
-Defined in: packages/hoppity/src/broker/rpc.ts:15
+Defined in: [packages/hoppity/src/broker/rpc.ts:15](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/rpc.ts#L15)

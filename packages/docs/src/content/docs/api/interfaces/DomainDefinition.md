@@ -5,7 +5,7 @@ prev: false
 title: "DomainDefinition"
 ---
 
-Defined in: packages/hoppity/src/contracts/types.ts:234
+Defined in: [packages/hoppity/src/contracts/types.ts:234](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/contracts/types.ts#L234)
 
 The return type of defineDomain. Groups all contracts for a domain under
 their operation-type namespaces.
@@ -34,7 +34,7 @@ their operation-type namespaces.
 
 > **commands**: `CommandContracts`\<`TDomain`, `TCommands`\>
 
-Defined in: packages/hoppity/src/contracts/types.ts:242
+Defined in: [packages/hoppity/src/contracts/types.ts:242](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/contracts/types.ts#L242)
 
 ---
 
@@ -42,7 +42,7 @@ Defined in: packages/hoppity/src/contracts/types.ts:242
 
 > **domain**: `TDomain`
 
-Defined in: packages/hoppity/src/contracts/types.ts:240
+Defined in: [packages/hoppity/src/contracts/types.ts:240](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/contracts/types.ts#L240)
 
 ---
 
@@ -50,7 +50,7 @@ Defined in: packages/hoppity/src/contracts/types.ts:240
 
 > **events**: `EventContracts`\<`TDomain`, `TEvents`\>
 
-Defined in: packages/hoppity/src/contracts/types.ts:241
+Defined in: [packages/hoppity/src/contracts/types.ts:241](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/contracts/types.ts#L241)
 
 ---
 
@@ -58,4 +58,4 @@ Defined in: packages/hoppity/src/contracts/types.ts:241
 
 > **rpc**: `RpcContracts`\<`TDomain`, `TRpc`\>
 
-Defined in: packages/hoppity/src/contracts/types.ts:243
+Defined in: [packages/hoppity/src/contracts/types.ts:243](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/contracts/types.ts#L243)

@@ -9,7 +9,6 @@ import hoppity, {
     onCommand,
     onRpc,
 } from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 import { PublicationConfig } from "rascal";
 import { z } from "zod";
 import { createTestTopology } from "./helpers/createTestTopology";
@@ -82,8 +81,8 @@ describe("interceptors: inbound metadata is populated correctly", () => {
                     handlers: [eventHandler],
                     publishes: [InterceptorDomain.events.laserFired],
                     interceptors: [metaCapture],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             await new Promise(r => setTimeout(r, 300));
@@ -177,8 +176,8 @@ describe("interceptors: outbound header injection propagates to inbound", () => 
                         }),
                     ],
                     interceptors: [headerExtractor],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             await new Promise(r => setTimeout(r, 300));
@@ -188,8 +187,8 @@ describe("interceptors: outbound header injection propagates to inbound", () => 
                     connection: makeConnection(),
                     publishes: [InterceptorDomain.events.laserFired],
                     interceptors: [headerInjector],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             await publisherBroker.publishEvent(InterceptorDomain.events.laserFired, {
@@ -258,8 +257,8 @@ describe("interceptors: ordering — first declared is outermost", () => {
                     publishes: [InterceptorDomain.events.laserFired],
                     // Alpha is declared first — should be outermost (called first on enter, last on exit)
                     interceptors: [interceptorAlpha, interceptorBeta],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             await new Promise(r => setTimeout(r, 300));
@@ -318,8 +317,8 @@ describe("interceptors: ordering — first declared is outermost", () => {
                     handlers: [onEvent(InterceptorDomain.events.laserFired, async () => {})],
                     publishes: [InterceptorDomain.events.laserFired],
                     interceptors: [interceptorAlpha, interceptorBeta],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             await new Promise(r => setTimeout(r, 300));
@@ -380,8 +379,8 @@ describe("interceptors: error propagation", () => {
                     ],
                     publishes: [InterceptorDomain.events.laserFired],
                     interceptors: [throwingInterceptor],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             // Tap the underlying subscription to know when the message was nacked
@@ -450,8 +449,8 @@ describe("interceptors: one-directional interceptors", () => {
                     ],
                     publishes: [InterceptorDomain.events.laserFired],
                     interceptors: [inboundOnly],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             await new Promise(r => setTimeout(r, 300));
@@ -509,8 +508,8 @@ describe("interceptors: one-directional interceptors", () => {
                     ],
                     publishes: [InterceptorDomain.events.laserFired],
                     interceptors: [outboundOnly],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             await new Promise(r => setTimeout(r, 300));
@@ -583,8 +582,8 @@ describe("interceptors: RPC interception", () => {
                         })),
                     ],
                     interceptors: [responderInterceptor],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             await new Promise(r => setTimeout(r, 500));
@@ -594,8 +593,8 @@ describe("interceptors: RPC interception", () => {
                     connection: makeConnection(),
                     publishes: [InterceptorDomain.rpc.scanSector],
                     interceptors: [requesterInterceptor],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             rpcResult = await requesterBroker.request(InterceptorDomain.rpc.scanSector, {
@@ -696,8 +695,8 @@ describe("interceptors: trace context round-trip via header injection", () => {
                         }),
                     ],
                     interceptors: [tracingInbound],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             await new Promise(r => setTimeout(r, 300));
@@ -707,8 +706,8 @@ describe("interceptors: trace context round-trip via header injection", () => {
                     connection: makeConnection(),
                     publishes: [InterceptorDomain.events.laserFired],
                     interceptors: [tracingOutbound],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             await publisherBroker.publishEvent(InterceptorDomain.events.laserFired, {
@@ -780,8 +779,8 @@ describe("interceptors: trace context round-trip via header injection", () => {
                         }),
                     ],
                     interceptors: [tracingInbound],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             await new Promise(r => setTimeout(r, 300));
@@ -791,8 +790,8 @@ describe("interceptors: trace context round-trip via header injection", () => {
                     connection: makeConnection(),
                     publishes: [InterceptorDomain.commands.engageWarpDrive],
                     interceptors: [tracingOutbound],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             await publisherBroker.sendCommand(InterceptorDomain.commands.engageWarpDrive, {

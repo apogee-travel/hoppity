@@ -17,10 +17,6 @@ The escape hatch is useful for:
 
 For typed, contract-driven services, see the [Bookstore](/hoppity/examples/bookstore/) example.
 
-## Middleware Used
-
-- `withCustomLogger` — custom logger injection
-
 ## How It Works
 
 ### Publisher
@@ -32,8 +28,8 @@ const broker = await hoppity
     .service("basic-pubsub-publisher", {
         connection: { url: "unused" }, // connection is in the raw topology
         topology: publisherTopology, // raw BrokerConfig
+        logger,
     })
-    .use(withCustomLogger({ logger }))
     .build();
 ```
 
@@ -48,8 +44,8 @@ const broker = await hoppity
     .service("basic-pubsub-subscriber", {
         connection: { url: "unused" },
         topology: subscriberTopology,
+        logger,
     })
-    .use(withCustomLogger({ logger }))
     .build();
 
 // Manual subscription wiring via Rascal
@@ -64,7 +60,7 @@ sub.on("message", (message, content, ackOrNack) => {
 - **Separate topologies** — Each service declares only the exchanges, queues, bindings, publications, and subscriptions it needs. The publisher topology defines a publication; the subscriber topology defines a subscription and queue.
 - **Raw topology only** — No `handlers` or `publishes` in the service config, so no topology derivation occurs. The raw `BrokerConfig` is used as-is (after middleware processing).
 - **Manual subscription wiring** — Without contract-driven handlers, subscriptions are wired manually after broker creation using Rascal's native `broker.subscribe()` API.
-- **Middleware still works** — Even with raw topology, middleware like `withCustomLogger` functions normally.
+- **Custom logger** — Pass `logger` directly in `ServiceConfig`. It's available throughout the build pipeline.
 
 ## Running It
 

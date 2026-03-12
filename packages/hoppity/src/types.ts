@@ -178,9 +178,9 @@ export type MiddlewareFunction = (
 
 /**
  * Utility type for combining a Rascal broker with extension methods added by middleware.
- * Middleware like `hoppity-logger` can monkey-patch extra methods
- * onto the broker in their `onBrokerCreated` callbacks. This type makes those extensions
- * type-safe by intersecting the base `BrokerAsPromised` with each extension record.
+ * Middleware can attach extra methods onto the broker in their `onBrokerCreated` callbacks.
+ * This type makes those extensions type-safe by intersecting the base `BrokerAsPromised`
+ * with each extension record.
  *
  * @typeParam T - Tuple of extension record types (e.g., `[RpcBrokerExtensions, DelayedPublishExtensions]`)
  *

@@ -3,8 +3,8 @@ import { Logger } from "@apogeelabs/hoppity";
 const PREFIX = "[order-service]";
 
 /**
- * Tagged logger for order-service. Passed to `withCustomLogger` so all hoppity
- * middleware and Rascal internals route log output through this instance.
+ * Tagged logger for order-service. Passed via `logger` in ServiceConfig so all
+ * hoppity pipeline logging and middleware route output through this instance.
  * Every line is prefixed with `[order-service]` for easy grep-ability in the
  * runner's multiplexed stdout.
  */

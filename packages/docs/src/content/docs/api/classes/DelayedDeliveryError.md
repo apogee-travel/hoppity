@@ -5,7 +5,7 @@ prev: false
 title: "DelayedDeliveryError"
 ---
 
-Defined in: packages/hoppity/src/broker/delayedDeliveryTypes.ts:50
+Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:50](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L50)
 
 Structured error class for delayed delivery operations.
 
@@ -19,7 +19,7 @@ Structured error class for delayed delivery operations.
 
 > **new DelayedDeliveryError**(`code`, `message`, `details?`): `DelayedDeliveryError`
 
-Defined in: packages/hoppity/src/broker/delayedDeliveryTypes.ts:54
+Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:54](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L54)
 
 #### Parameters
 
@@ -61,7 +61,7 @@ Defined in: node_modules/.pnpm/typescript@5.8.3/node_modules/typescript/lib/lib.
 
 > `readonly` **code**: [`DelayedDeliveryErrorCode`](/hoppity/api/enumerations/delayeddeliveryerrorcode/)
 
-Defined in: packages/hoppity/src/broker/delayedDeliveryTypes.ts:51
+Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:51](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L51)
 
 ---
 
@@ -69,7 +69,7 @@ Defined in: packages/hoppity/src/broker/delayedDeliveryTypes.ts:51
 
 > `readonly` `optional` **details**: `any`
 
-Defined in: packages/hoppity/src/broker/delayedDeliveryTypes.ts:52
+Defined in: [packages/hoppity/src/broker/delayedDeliveryTypes.ts:52](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/broker/delayedDeliveryTypes.ts#L52)
 
 ---
 

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import hoppity, { ServiceBroker } from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 import { createTestTopology } from "./helpers/createTestTopology";
 import { silentLogger } from "./helpers/silentLogger";
 
@@ -52,8 +51,8 @@ describe("subscriptions: auto-wired handlers receive messages", () => {
                 .service("sub-test", {
                     connection: { url: "unused" },
                     topology,
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             // Subscribe directly via the underlying Rascal broker
@@ -151,8 +150,8 @@ describe("subscriptions: auto-wired handlers receive messages", () => {
                 .service("sub-multi-test", {
                     connection: { url: "unused" },
                     topology,
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             const alphaSub = await broker.subscribe("sub_alpha_sub");

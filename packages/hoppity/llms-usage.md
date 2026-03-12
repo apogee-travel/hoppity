@@ -81,6 +81,7 @@ interface ServiceConfig {
     validateInbound?: boolean; // validate incoming payloads against schemas (defaults to true)
     validateOutbound?: boolean; // validate outgoing payloads against schemas (defaults to false)
     interceptors?: Interceptor[]; // per-message wrappers for telemetry, tracing, metrics
+    logger?: Logger; // custom logger -- replaces defaultLogger for entire build pipeline
     delayedDelivery?: {
         maxRetries?: number; // max re-publish attempts before error queue (default 5)
         retryDelay?: number; // ms between retry attempts (default 1000)
@@ -311,8 +312,8 @@ Named functions show their name in error messages and `context.middlewareNames`.
 ```typescript
 const broker = await hoppity
     .service("my-service", config)
-    .use(withCustomLogger({ logger })) // first -- so downstream middleware uses custom logger
     .use(myMiddleware)
+    .use(myOtherMiddleware)
     .build();
 ```
 

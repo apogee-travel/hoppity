@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import hoppity, { ServiceBroker, defineDomain, onRpc, onEvent } from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 import { z } from "zod";
 import { createTestTopology } from "./helpers/createTestTopology";
 import { silentLogger } from "./helpers/silentLogger";
@@ -62,8 +61,8 @@ describe("combined: multiple middleware on one broker", () => {
                     handlers: [greetHandler, thingHappenedHandler],
                     // Server also publishes thingHappened so it can fire events
                     publishes: [CombinedDomain.events.thingHappened],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             await new Promise(r => setTimeout(r, 500));
@@ -73,8 +72,8 @@ describe("combined: multiple middleware on one broker", () => {
                 .service("combined-client", {
                     connection: makeConnection(),
                     publishes: [CombinedDomain.rpc.greet, CombinedDomain.events.thingHappened],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             rpcResult = await clientBroker.request(CombinedDomain.rpc.greet, { name: "MCFLY" });

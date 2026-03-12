@@ -9,7 +9,6 @@ Handlers and publish declarations ARE the topology. You declare what your servic
 | Package | npm Name | Version | Status | Dependencies |
 |---------|----------|---------|--------|--------------|
 | hoppity | `@apogeelabs/hoppity` | 1.0.0 | Stable | `rascal@^20.1.1`, `fast-deep-equal@^3.1.3`, `zod@^3.x` |
-| hoppity-logger | `@apogeelabs/hoppity-logger` | 1.0.0 | Stable | `@apogeelabs/hoppity` (workspace), `rascal@^20.1.1` (peer) |
 | hoppity-open-telemetry | `@apogeelabs/hoppity-open-telemetry` | 0.1.0 | Stable | `@apogeelabs/hoppity` (workspace), `@opentelemetry/api@^1.9.0` (peer) |
 
 All packages require Node >= 22. All produce CJS, ESM, and type declarations.
@@ -77,7 +76,7 @@ interface Logger {
 interface MiddlewareContext {
     data: Record<string, any>;         // Mutable shared state between middleware
     middlewareNames: string[];          // Names of middleware that have already executed
-    logger: Logger;                     // Logger instance (set by withCustomLogger or defaultLogger)
+    logger: Logger;                     // Logger instance (set by ServiceConfig.logger or defaultLogger)
     serviceName?: string;               // Populated by ServiceBuilder from hoppity.service(name, ...)
 }
 ```
@@ -321,6 +320,7 @@ interface ServiceConfig {
     validateInbound?: boolean;      // Validate incoming payloads against schemas (defaults to true)
     validateOutbound?: boolean;     // Validate outgoing payloads against schemas (defaults to false)
     interceptors?: Interceptor[];   // Per-message wrappers — tracing, metrics, header injection
+    logger?: Logger;                // Custom logger — replaces defaultLogger for the entire build pipeline
     delayedDelivery?: {
         maxRetries?: number;         // Max re-publish attempts before error queue (default 5)
         retryDelay?: number;         // ms between retry attempts (default 1000)
@@ -591,7 +591,6 @@ camelCase operation names are converted to snake_case. Acronyms collapse to a si
 ```typescript
 import { z } from "zod";
 import hoppity, { defineDomain, onEvent, onCommand, onRpc } from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 
 // --- Define the domain ---
 
@@ -675,8 +674,8 @@ const broker = await hoppity
             OrdersDomain.events.orderCreated,
             OrdersDomain.events.orderCancelled,
         ],
+        logger,
     })
-    .use(withCustomLogger({ logger }))
     .build();
 
 // --- Use the broker ---
@@ -774,21 +773,12 @@ const auditMiddleware: MiddlewareFunction = (topology, context) => {
 };
 
 const broker = await hoppity
-    .service("my-service", { connection: { url: "amqp://localhost" } })
-    .use(withCustomLogger({ logger })) // should go first
+    .service("my-service", {
+        connection: { url: "amqp://localhost" },
+        logger,   // active before any middleware runs — no ordering footgun
+    })
     .use(auditMiddleware)
     .build();
-```
-
-### `withCustomLogger` (`@apogeelabs/hoppity-logger`)
-
-```typescript
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
-
-const middleware = withCustomLogger({ logger: myWinstonLogger });
-```
-
-Sets `context.logger` so all subsequent middleware and the framework itself use the custom logger. Should be the first `.use()` call.
 
 ---
 
@@ -882,7 +872,6 @@ const broker = await hoppity
         publishes: [OrdersDomain.events.orderCreated],
         interceptors: [withTracing, withMetrics],
     })
-    .use(withCustomLogger({ logger }))
     .build();
 ```
 
@@ -1071,7 +1060,7 @@ A concern belongs in middleware if it modifies the broker's topology or needs to
 
 ```typescript
 // Error message includes middleware index and name:
-// "Middleware 2 (withCustomLogger) failed: ..."
+// "Middleware 2 (myMiddleware) failed: ..."
 // error.cause holds the original error
 ```
 

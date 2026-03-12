@@ -16,6 +16,7 @@ import { ServiceBroker } from "./broker/types";
 import { Interceptor } from "./interceptors/types";
 import type {
     BrokerCreatedCallback,
+    Logger,
     MiddlewareContext,
     MiddlewareExecution,
     MiddlewareFunction,
@@ -52,6 +53,12 @@ export interface ServiceConfig {
      * Only relevant when any declared contracts use `delay` support.
      */
     delayedDelivery?: DelayedDeliveryConfig;
+    /**
+     * Custom logger instance. When provided, replaces the default ConsoleLogger for all
+     * build pipeline logging, handler wiring, and outbound method logging. Providing the
+     * logger here ensures it is active before any middleware runs — no ordering footgun.
+     */
+    logger?: Logger;
 }
 
 /**
@@ -88,7 +95,9 @@ export class ServiceBuilder {
         this.context = {
             data: {},
             middlewareNames: [],
-            logger: defaultLogger,
+            // config.logger takes precedence — it's available before any middleware runs,
+            // so downstream middleware and handler wiring always log through the custom logger.
+            logger: config.logger ?? defaultLogger,
             serviceName,
         };
     }

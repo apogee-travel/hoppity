@@ -11,8 +11,8 @@ import { Hoppity } from "./types";
  *         connection: { url: "amqp://localhost" },
  *         handlers: [createOrderHandler],
  *         publishes: [OrdersDomain.events.orderCreated],
+ *         logger,
  *     })
- *     .use(withCustomLogger({ logger }))
  *     .build();
  * ```
  */

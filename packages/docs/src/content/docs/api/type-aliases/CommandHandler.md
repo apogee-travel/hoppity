@@ -7,7 +7,7 @@ title: "CommandHandler"
 
 > **CommandHandler**\<`TSchema`\> = (`content`, `context`) => `Promise`\<`void`\> \| `void`
 
-Defined in: packages/hoppity/src/handlers/types.ts:69
+Defined in: [packages/hoppity/src/handlers/types.ts:69](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/handlers/types.ts#L69)
 
 Handler for domain commands. May be sync or async — auto-acked on success.
 

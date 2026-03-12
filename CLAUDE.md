@@ -39,7 +39,6 @@ hoppity/
 │   │           ├── delayedDeliveryTypes.ts # DelayedDeliveryEnvelope, error types
 │   │           ├── correlationManager.ts
 │   │           └── types.ts               # ServiceBroker type
-│   ├── hoppity-logger/              # Custom logger injection (middleware)
 │   └── docs/                        # Astro docs site
 ├── examples/
 │   └── bookstore/                   # Bookstore demo (orders + catalog services)
@@ -91,11 +90,8 @@ pnpm --filter hoppity test -- --watch  # Jest watch mode
 ## Package Dependency Graph
 
 ```
-hoppity-open-telemetry ─┐
-hoppity-logger ──────────┴──▶ hoppity (core) ──▶ rascal, fast-deep-equal, zod
+hoppity-open-telemetry ──▶ hoppity (core) ──▶ rascal, fast-deep-equal, zod
 ```
-
-`hoppity-logger` depends on `@apogeelabs/hoppity` (workspace:\*) and has `rascal@^20.1.1` as a peer dependency.
 
 `hoppity-open-telemetry` depends on `@apogeelabs/hoppity` (workspace:\*) and has `@opentelemetry/api@^1.9.0` as a peer dependency. Core hoppity has zero OTel dependencies.
 
@@ -156,7 +152,6 @@ Unchanged from pre-v1:
 | Package                | Status | Notes                                                                 |
 | ---------------------- | ------ | --------------------------------------------------------------------- |
 | hoppity                | v1.0.0 | Core — contracts, handlers, topology, broker wiring, delayed delivery |
-| hoppity-logger         | v1.0.0 | Minimal surface area, trivial implementation                          |
 | hoppity-open-telemetry | v0.1.0 | OTel tracing + metrics interceptors; `@opentelemetry/api` peer dep    |
 
 ## Release Process
@@ -177,7 +172,7 @@ Packages are scoped under `@apogeelabs` with `"access": "public"`. Internal deps
 - **Pre-commit hooks run Prettier** — Formatting is automatic. Don't fight it.
 - **turbo caching** — `test` depends on `build`. If you change source, `pnpm build` before `pnpm test`, or use `pnpm dev` for watch mode.
 - **Integration tests need Docker** — Testcontainers spins up RabbitMQ. Tests run serially (`maxWorkers: 1`), 60s timeout.
-- **Middleware order matters** — `withCustomLogger` should go first so downstream middleware and handler wiring use the custom logger.
+- **Logger goes in config, not middleware** — Pass `logger` in `ServiceConfig` directly. It's active before any middleware runs, so there's no ordering concern.
 - **Middleware is synchronous** — The middleware function itself returns `MiddlewareResult` (not a Promise). Async work goes in `onBrokerCreated`.
 - **No deep imports** — Every package exports only from its root. No `dist/` or sub-module imports exist.
 - **Node 22 required** — `.nvmrc` specifies it. `structuredClone` and other modern APIs are assumed available.

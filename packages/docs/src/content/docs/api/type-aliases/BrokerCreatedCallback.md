@@ -7,7 +7,7 @@ title: "BrokerCreatedCallback"
 
 > **BrokerCreatedCallback** = (`broker`) => `void` \| `Promise`\<`void`\>
 
-Defined in: [packages/hoppity/src/types.ts:115](https://github.com/apogee-travel/hoppity/blob/116ad649c2e29714e173c4ca41b19c4ffff2fa39/packages/hoppity/src/types.ts#L115)
+Defined in: [packages/hoppity/src/types.ts:115](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/types.ts#L115)
 
 Callback function that is executed after the broker is created.
 Allows middleware to perform post-creation setup like subscribing to queues,

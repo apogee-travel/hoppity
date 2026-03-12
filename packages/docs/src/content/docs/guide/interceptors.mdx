@@ -109,8 +109,8 @@ const broker = await hoppity
         handlers: [cancelOrderHandler, getOrderSummaryHandler],
         publishes: [OrdersDomain.events.orderCreated],
         interceptors: [withTracing, withMetrics],
+        logger,
     })
-    .use(withCustomLogger({ logger }))
     .build();
 ```
 

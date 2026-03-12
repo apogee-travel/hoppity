@@ -19,7 +19,6 @@ Requires Node >= 22.
 ```typescript
 import { z } from "zod";
 import hoppity, { defineDomain, onEvent, onCommand } from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 
 // 1. Define your domain contracts
 const OrdersDomain = defineDomain("orders", {
@@ -52,8 +51,8 @@ const broker = await hoppity
         connection: { url: "amqp://localhost" },
         handlers: [handleOrderCreated, handleCancelOrder],
         publishes: [OrdersDomain.events.orderCreated],
+        logger, // optional — defaults to ConsoleLogger
     })
-    .use(withCustomLogger({ logger })) // optional middleware
     .build();
 
 // 4. Use the broker
@@ -94,6 +93,7 @@ interface ServiceConfig {
     handlers?: HandlerDeclaration[];
     publishes?: (EventContract | CommandContract | RpcContract)[];
     interceptors?: Interceptor[]; // per-message wrappers for telemetry, tracing, metrics
+    logger?: Logger; // custom logger — replaces ConsoleLogger for entire build pipeline
     topology?: BrokerConfig; // raw Rascal config — merged as base
     instanceId?: string; // auto-generated UUID if omitted
     defaultTimeout?: number; // RPC timeout in ms (default 30_000)
@@ -170,10 +170,6 @@ Inbound wrappers receive `InboundMetadata` — the contract, operation kind (`"e
 ## Interceptor Packages
 
 [`@apogeelabs/hoppity-open-telemetry`](../hoppity-open-telemetry) provides production-ready `withTracing` and `withMetrics` interceptors built on `@opentelemetry/api`. Both are dual-use: pass them directly as values for default configuration, or call them as factories to supply a custom tracer/meter name or histogram buckets. `withTracing` handles W3C context propagation across service boundaries automatically — trace context is injected into AMQP headers on publish and extracted on receive, so spans link up without any extra plumbing.
-
-## Middleware Packages
-
-- [`@apogeelabs/hoppity-logger`](../hoppity-logger) — inject a custom logger (Winston, Pino, etc.)
 
 ## Documentation
 

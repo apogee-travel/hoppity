@@ -6,7 +6,7 @@ import { getBroker } from "./messaging/broker";
  *
  * Demonstrates publishing messages with hoppity:
  * 1. withTopology() to declare exchanges and publications
- * 2. withCustomLogger() for custom logger injection
+ * 2. logger in ServiceConfig for custom logger injection
  * 3. broker.publish() to send messages
  *
  * The publisher creates a broker via hoppity's builder pattern, then

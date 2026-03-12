@@ -8,8 +8,8 @@ import { Logger } from "@apogeelabs/hoppity";
  * level name for readability in the console.
  *
  * In a real app, you'd swap this for Winston, Pino, etc. — anything that
- * satisfies the `Logger` interface works. Pass your logger to
- * `withCustomLogger({ logger })` and hoppity's internal pipeline logging
+ * satisfies the `Logger` interface works. Pass your logger via the `logger`
+ * property in `ServiceConfig` and hoppity's internal pipeline logging
  * (plus any middleware that uses `context.logger`) will go through it.
  */
 export const logger: Logger = {

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import hoppity, { ServiceBroker, defineDomain, onRpc } from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 import { z } from "zod";
 import { createTestTopology } from "./helpers/createTestTopology";
 import { silentLogger } from "./helpers/silentLogger";
@@ -45,8 +44,8 @@ describe("rpc: request/response round-trip", () => {
                 .service("rpc-handler-svc", {
                     connection: makeConnection(),
                     handlers: [echoHandler],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             // Small delay to let the subscription settle
@@ -56,8 +55,8 @@ describe("rpc: request/response round-trip", () => {
                 .service("rpc-requester-svc", {
                     connection: makeConnection(),
                     publishes: [TestRpcDomain.rpc.echo],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             rpcResult = await requesterBroker.request(TestRpcDomain.rpc.echo, {
@@ -88,8 +87,8 @@ describe("rpc: request/response round-trip", () => {
                     connection: makeConnection(),
                     publishes: [TestRpcDomain.rpc.echo],
                     defaultTimeout: 3_000,
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             try {
@@ -125,8 +124,8 @@ describe("rpc: request/response round-trip", () => {
                 .service("rpc-multi-handler", {
                     connection: makeConnection(),
                     handlers: [addHandler],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             await new Promise(r => setTimeout(r, 500));
@@ -135,8 +134,8 @@ describe("rpc: request/response round-trip", () => {
                 .service("rpc-multi-requester", {
                     connection: makeConnection(),
                     publishes: [TestRpcDomain.rpc.add],
+                    logger: silentLogger,
                 })
-                .use(withCustomLogger({ logger: silentLogger }))
                 .build();
 
             results = [];

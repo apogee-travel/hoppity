@@ -7,7 +7,6 @@
     },
     "devDependencies": {
         "@apogeelabs/hoppity": "workspace:*",
-        "@apogeelabs/hoppity-logger": "workspace:*",
         "@testcontainers/rabbitmq": "^11.11.0",
         "@types/jest": "^29.5.5",
         "@types/rascal": "^10.2.1",

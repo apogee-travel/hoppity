@@ -10,7 +10,6 @@
     },
     "dependencies": {
         "@apogeelabs/hoppity": "workspace:*",
-        "@apogeelabs/hoppity-logger": "workspace:*",
         "@bookstore/contracts": "workspace:*",
         "dotenv": "^16.3.1",
         "rascal": "^20.1.1"

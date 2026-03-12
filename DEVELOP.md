@@ -38,7 +38,6 @@ The repository is organized as a monorepo with the following structure:
 hoppity/
 ├── packages/                    # Core packages
 │   ├── hoppity/                 # Core — contracts, handlers, topology derivation, broker wiring
-│   ├── hoppity-logger/          # Custom logger injection (Winston, Pino, etc.)
 │   └── docs/                    # Astro docs site
 ├── examples/                    # Example applications
 │   ├── basic-pubsub/            # Basic pub/sub with raw topology escape hatch

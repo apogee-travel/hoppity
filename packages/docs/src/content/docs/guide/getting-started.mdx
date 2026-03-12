@@ -5,14 +5,11 @@ description: Install hoppity and build your first contract-driven service.
 
 ## Installation
 
-Install the core package and any middleware you need:
+Install the core package:
 
 ```bash
 # Core (required) — includes contracts, handlers, topology derivation, RPC
 npm install @apogeelabs/hoppity rascal zod
-
-# Middleware (optional)
-npm install @apogeelabs/hoppity-logger
 ```
 
 :::note
@@ -77,11 +74,10 @@ Handler payloads are typed via `z.infer` from the contract's schema. The `contex
 
 ## Build the Service
 
-Pass handlers and publish declarations to `hoppity.service()`, add any middleware, and call `.build()`:
+Pass handlers and publish declarations to `hoppity.service()` and call `.build()`:
 
 ```typescript
 import hoppity from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 
 const broker = await hoppity
     .service("order-service", {
@@ -93,8 +89,8 @@ const broker = await hoppity
         },
         handlers: [cancelOrderHandler, getOrderSummaryHandler],
         publishes: [OrdersDomain.events.orderCreated],
+        logger: myLogger, // optional — defaults to ConsoleLogger
     })
-    .use(withCustomLogger({ logger: myLogger }))
     .build();
 ```
 

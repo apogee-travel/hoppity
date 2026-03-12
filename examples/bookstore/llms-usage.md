@@ -10,7 +10,7 @@ A multi-service bookstore using hoppity's contract-driven API:
 - **`onRpc`, `onCommand`, `onEvent`** -- typed handler declarations that drive automatic topology derivation
 - **`hoppity.service().use().build()`** -- the ServiceBuilder API
 - **`ServiceBroker`** -- typed outbound methods: `broker.request()`, `broker.sendCommand()`, `broker.publishEvent()`
-- **`withCustomLogger`** -- tagged loggers injected via middleware
+- **`logger` in `ServiceConfig`** -- tagged loggers injected directly, active before any middleware
 - **Handler context** -- publishing events from inside handlers via `context.broker`
 
 All three messaging patterns are shown: **RPC** (request/response), **commands** (fire-and-forget), and **events** (broadcast notifications).
@@ -209,7 +209,6 @@ Each service passes its handlers and published contracts to `hoppity.service()`.
 ```typescript
 // order-service/src/messaging/broker.ts
 import hoppity, { ServiceBroker } from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 import { OrdersDomain } from "@bookstore/contracts";
 
 const broker: ServiceBroker = await hoppity
@@ -222,8 +221,8 @@ const broker: ServiceBroker = await hoppity
         },
         handlers: [createOrderHandler, getOrderSummaryHandler, cancelOrderHandler],
         publishes: [OrdersDomain.events.orderCreated, OrdersDomain.events.orderCancelled],
+        logger,
     })
-    .use(withCustomLogger({ logger }))
     .build();
 ```
 
@@ -239,8 +238,8 @@ const broker: ServiceBroker = await hoppity
             retry: { factor: 2, min: 1000, max: 5000 },
         },
         handlers: [onOrderCreatedHandler, onOrderCancelledHandler, getStockLevelsHandler],
+        logger,
     })
-    .use(withCustomLogger({ logger }))
     .build();
 ```
 
@@ -262,8 +261,8 @@ const broker: ServiceBroker = await hoppity
             OrdersDomain.commands.cancelOrder,
             CatalogDomain.rpc.getStockLevels,
         ],
+        logger,
     })
-    .use(withCustomLogger({ logger }))
     .build();
 ```
 
@@ -290,9 +289,9 @@ await broker.publishEvent(OrdersDomain.events.orderCreated, { orderId, items, to
 
 ## Key Configuration Decisions
 
-### Middleware Ordering
+### Custom Logger
 
-`withCustomLogger` goes first. It replaces `context.logger` so all subsequent middleware and hoppity internals log through the custom logger.
+Pass `logger` directly in `ServiceConfig`. It takes effect before the build pipeline starts -- no middleware ordering concerns.
 
 ### Why the Runner Lists Contracts in `publishes`
 
@@ -351,7 +350,7 @@ examples/bookstore/
 │   │   └── src/
 │   │       ├── index.ts          # Service entry point
 │   │       ├── config.ts         # RabbitMQ connection config
-│   │       ├── logger.ts         # Tagged logger for withCustomLogger
+│   │       ├── logger.ts         # Tagged console logger for ServiceConfig.logger
 │   │       ├── store.ts          # In-memory order store
 │   │       └── messaging/
 │   │           ├── broker.ts     # hoppity.service() + singleton
@@ -363,7 +362,7 @@ examples/bookstore/
 │       └── src/
 │           ├── index.ts          # Service entry point
 │           ├── config.ts         # RabbitMQ connection config
-│           ├── logger.ts         # Tagged logger for withCustomLogger
+│           ├── logger.ts         # Tagged console logger for ServiceConfig.logger
 │           ├── store.ts          # In-memory product catalog + stock
 │           └── messaging/
 │               ├── broker.ts     # hoppity.service() + singleton
@@ -375,7 +374,7 @@ examples/bookstore/
     └── src/
         ├── index.ts              # Demo orchestration script
         ├── config.ts             # RabbitMQ config + service paths
-        ├── logger.ts             # Tagged logger for withCustomLogger
+        ├── logger.ts             # Tagged console logger for ServiceConfig.logger
         ├── output.ts             # TUI formatting helpers
         ├── processManager.ts     # Child process spawning
         └── messaging/

@@ -3,8 +3,8 @@ import { Logger } from "@apogeelabs/hoppity";
 const PREFIX = "[runner]";
 
 /**
- * Tagged logger for the runner process. Passed to `withCustomLogger` so all
- * hoppity middleware and Rascal internals route log output through this instance.
+ * Tagged logger for the runner process. Passed via `logger` in ServiceConfig so
+ * all hoppity pipeline logging and middleware route output through this instance.
  * Prefixed with `[runner]` to distinguish from the child-service output.
  */
 export const logger: Logger = {

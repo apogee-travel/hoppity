@@ -139,25 +139,28 @@ interface MiddlewareContext {
 ```
 
 - **`context.data`** — Any middleware can read/write here. Useful for passing configuration between middleware.
-- **`context.logger`** — All middleware should use this for logging. If `withCustomLogger` runs first, everything downstream uses your custom logger.
+- **`context.logger`** — All middleware should use this for logging. Set via `logger` in `ServiceConfig` — active before any middleware runs.
 - **`context.serviceName`** — The service name, populated automatically by the builder.
 
 ## Middleware
 
-Middleware is for **cross-cutting concerns only** — things that apply across the service but aren't specific to any one handler or contract. Logging, observability, custom topology augmentation.
+Middleware is for **cross-cutting concerns only** — things that apply across the service but aren't specific to any one handler or contract. Observability, custom topology augmentation.
 
 Handlers, subscriptions, RPC, and typed broker methods are all built into core. You do not need middleware for any of those.
 
-### Ordering
+### Custom Logger
 
-Order matters. The recommended convention:
+Pass your logger directly in `ServiceConfig` — it's the simplest approach and has no ordering concerns:
 
-| Position | Middleware         | Reason                                                                  |
-| -------- | ------------------ | ----------------------------------------------------------------------- |
-| 1st      | `withCustomLogger` | Replaces `context.logger` so all downstream middleware uses your logger |
-| After    | Custom middleware  | Your own cross-cutting concerns                                         |
-
-`withCustomLogger` should always go first so the custom logger is available to all subsequent middleware and to the framework itself during handler wiring and broker creation.
+```typescript
+const broker = await hoppity
+    .service("order-service", {
+        connection: { url: "amqp://localhost" },
+        handlers: [cancelOrderHandler],
+        logger: myLogger, // active before any middleware runs
+    })
+    .build();
+```
 
 ### Writing Custom Middleware
 

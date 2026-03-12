@@ -578,5 +578,163 @@ describe("hoppity > ServiceBuilder", () => {
                 expect(result).toBe(mockBroker);
             });
         });
+
+        describe("when a custom logger is provided in config", () => {
+            let receivedContext: any,
+                customLogger: any,
+                ServiceBuilderClass: typeof import("./ServiceBuilder").ServiceBuilder;
+
+            beforeEach(async () => {
+                ({ ServiceBuilder: ServiceBuilderClass } = await import("./ServiceBuilder"));
+
+                customLogger = {
+                    silly: jest.fn(),
+                    debug: jest.fn(),
+                    info: jest.fn(),
+                    warn: jest.fn(),
+                    error: jest.fn(),
+                    critical: jest.fn(),
+                };
+
+                const builder = new ServiceBuilderClass("grub-service", {
+                    connection: { url: "amqp://localhost" },
+                    logger: customLogger,
+                });
+
+                function captureMiddleware(_topology: any, context: any) {
+                    receivedContext = context;
+                    return { topology: _topology };
+                }
+
+                await builder.use(captureMiddleware).build();
+            });
+
+            it("should inject the custom logger into the middleware context", () => {
+                expect(receivedContext.logger).toBe(customLogger);
+            });
+        });
+
+        describe("when no logger is provided in config", () => {
+            let receivedContext: any,
+                ServiceBuilderClass: typeof import("./ServiceBuilder").ServiceBuilder,
+                defaultLoggerRef: any;
+
+            beforeEach(async () => {
+                ({ ServiceBuilder: ServiceBuilderClass } = await import("./ServiceBuilder"));
+                const { defaultLogger } = await import("./consoleLogger");
+                defaultLoggerRef = defaultLogger;
+
+                const builder = new ServiceBuilderClass("grub-service", {
+                    connection: { url: "amqp://localhost" },
+                });
+
+                function captureMiddleware(_topology: any, context: any) {
+                    receivedContext = context;
+                    return { topology: _topology };
+                }
+
+                await builder.use(captureMiddleware).build();
+            });
+
+            it("should use the defaultLogger in the middleware context", () => {
+                expect(receivedContext.logger).toBe(defaultLoggerRef);
+            });
+        });
+
+        describe("when a custom logger is provided and interceptors are also registered", () => {
+            let customLogger: any,
+                ServiceBuilderClass: typeof import("./ServiceBuilder").ServiceBuilder;
+
+            beforeEach(async () => {
+                ({ ServiceBuilder: ServiceBuilderClass } = await import("./ServiceBuilder"));
+
+                customLogger = {
+                    silly: jest.fn(),
+                    debug: jest.fn(),
+                    info: jest.fn(),
+                    warn: jest.fn(),
+                    error: jest.fn(),
+                    critical: jest.fn(),
+                };
+
+                // Interceptors trigger a this.context.logger.info() call that happens
+                // *before* any middleware runs (phase 1 vs phase 3). This verifies the
+                // custom logger is active at that pre-middleware point.
+                const builder = new ServiceBuilderClass("sushi-service", {
+                    connection: { url: "amqp://localhost" },
+                    logger: customLogger,
+                    interceptors: [{ name: "trace-everything", inbound: jest.fn() }],
+                });
+
+                await builder.build();
+            });
+
+            it("should call the custom logger before any middleware runs", () => {
+                expect(customLogger.info).toHaveBeenCalledTimes(1);
+            });
+
+            it("should log the interceptor name in the pre-middleware message", () => {
+                expect(customLogger.info).toHaveBeenCalledWith(
+                    expect.stringContaining("trace-everything")
+                );
+            });
+        });
+
+        describe("when middleware replaces context.logger after config logger is set", () => {
+            let receivedContextAfterMiddleware: any,
+                configLogger: any,
+                replacementLogger: any,
+                ServiceBuilderClass: typeof import("./ServiceBuilder").ServiceBuilder;
+
+            beforeEach(async () => {
+                ({ ServiceBuilder: ServiceBuilderClass } = await import("./ServiceBuilder"));
+
+                configLogger = {
+                    silly: jest.fn(),
+                    debug: jest.fn(),
+                    info: jest.fn(),
+                    warn: jest.fn(),
+                    error: jest.fn(),
+                    critical: jest.fn(),
+                };
+
+                replacementLogger = {
+                    silly: jest.fn(),
+                    debug: jest.fn(),
+                    info: jest.fn(),
+                    warn: jest.fn(),
+                    error: jest.fn(),
+                    critical: jest.fn(),
+                };
+
+                const builder = new ServiceBuilderClass("ramen-service", {
+                    connection: { url: "amqp://localhost" },
+                    logger: configLogger,
+                });
+
+                // First middleware swaps the logger — simulates the old hoppity-logger pattern.
+                // The context.logger field is mutable, so middleware can still do this.
+                function loggerSwapMiddleware(topology: any, context: any) {
+                    context.logger = replacementLogger;
+                    return { topology };
+                }
+
+                // Second middleware captures the context to verify which logger is active.
+                function captureMiddleware(_topology: any, context: any) {
+                    receivedContextAfterMiddleware = context;
+                    return { topology: _topology };
+                }
+
+                await builder.use(loggerSwapMiddleware).use(captureMiddleware).build();
+            });
+
+            it("should use the replacement logger in subsequent middleware", () => {
+                expect(receivedContextAfterMiddleware.logger).toBe(replacementLogger);
+            });
+
+            it("should not use the config logger after middleware replaces it", () => {
+                expect(receivedContextAfterMiddleware.logger).not.toBe(configLogger);
+            });
+        });
     });
 });

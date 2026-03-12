@@ -39,7 +39,6 @@ You can also view the examples for real-world usage:
 ## Packages
 
 - [`hoppity`](./packages/hoppity) – Core library — contracts, handlers, topology derivation, broker wiring
-- [`hoppity-logger`](./packages/hoppity-logger) – Custom logger injection (Winston, Pino, etc.) into middleware context
 - [`hoppity-open-telemetry`](./packages/hoppity-open-telemetry) – OpenTelemetry tracing and metrics interceptors
 
 ---

@@ -1,5 +1,4 @@
 import hoppity, { ServiceBroker } from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 import { OrdersDomain, CatalogDomain } from "@bookstore/contracts";
 import { logger } from "../logger";
 import { config } from "../config";
@@ -13,9 +12,6 @@ let brokerInstance: ServiceBroker | null = null;
  * Listing the RPC contracts in `publishes` causes ServiceBuilder to add the
  * reply queue infrastructure automatically, so broker.request() works without
  * any manual topology augmentation.
- *
- * Middleware stack:
- *  1. withCustomLogger — ensures all downstream middleware uses the runner logger
  */
 export async function getBroker(): Promise<ServiceBroker> {
     if (brokerInstance) {
@@ -36,8 +32,8 @@ export async function getBroker(): Promise<ServiceBroker> {
                 OrdersDomain.commands.cancelOrder,
                 CatalogDomain.rpc.getStockLevels,
             ],
+            logger,
         })
-        .use(withCustomLogger({ logger }))
         .build();
 
     return brokerInstance;

@@ -1,5 +1,4 @@
 import hoppity, { ServiceBroker } from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 import { logger } from "../logger";
 import { config } from "../config";
 import { getStockLevelsHandler } from "./handlers/getStockLevels";
@@ -10,9 +9,6 @@ let brokerInstance: ServiceBroker | null = null;
 
 /**
  * Singleton factory for the catalog-service broker.
- *
- * Middleware stack:
- *  1. withCustomLogger — ensures all downstream middleware uses the service logger
  *
  * Handlers and topology are derived automatically from the handlers array —
  * no topology.ts file required.
@@ -31,8 +27,8 @@ export async function getBroker(): Promise<ServiceBroker> {
                 retry: { factor: 2, min: 1000, max: 5000 },
             },
             handlers: [onOrderCreatedHandler, onOrderCancelledHandler, getStockLevelsHandler],
+            logger,
         })
-        .use(withCustomLogger({ logger }))
         .build();
 
     return brokerInstance;

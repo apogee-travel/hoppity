@@ -23,7 +23,6 @@ Hoppity introduces **domain contracts** as the single source of truth. You defin
 ```typescript
 import { z } from "zod";
 import hoppity, { defineDomain, onEvent, onCommand, onRpc } from "@apogeelabs/hoppity";
-import { withCustomLogger } from "@apogeelabs/hoppity-logger";
 
 // Define the domain — shared between services
 const OrdersDomain = defineDomain("orders", {
@@ -54,8 +53,8 @@ const broker = await hoppity
             }),
         ],
         publishes: [OrdersDomain.events.orderCreated],
+        logger: myLogger, // optional — defaults to ConsoleLogger
     })
-    .use(withCustomLogger({ logger: myLogger }))
     .build();
 
 // Typed outbound methods on the broker
@@ -70,7 +69,6 @@ No topology files. No manual exchange/queue/binding declarations. The contracts 
 | Package                              | Purpose                                                                                        |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------- |
 | `@apogeelabs/hoppity`                | Core — contracts, handlers, topology derivation, builder, broker wiring, RPC, delayed delivery |
-| `@apogeelabs/hoppity-logger`         | Custom logger injection (middleware)                                                           |
 | `@apogeelabs/hoppity-open-telemetry` | OpenTelemetry tracing and metrics interceptors                                                 |
 
 ## How the Pipeline Works

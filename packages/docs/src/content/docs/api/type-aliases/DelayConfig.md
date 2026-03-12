@@ -7,7 +7,7 @@ title: "DelayConfig"
 
 > **DelayConfig** = `true` \| \{ `default`: `number`; \}
 
-Defined in: packages/hoppity/src/contracts/types.ts:14
+Defined in: [packages/hoppity/src/contracts/types.ts:14](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/contracts/types.ts#L14)
 
 Declares delayed delivery support on a contract.
 

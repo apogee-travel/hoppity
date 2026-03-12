@@ -41,8 +41,9 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
         and typed request/response contracts — all in core.
     </Card>
     <Card icon="list-format" title="Middleware for Cross-Cutting Concerns">
-        Custom logging via `hoppity-logger`, or write your own middleware for any cross-cutting
-        concern. Delayed delivery is built into core via contract-level `delay` declarations.
+        Pass a custom logger directly in `ServiceConfig`, or write your own middleware for any
+        cross-cutting concern. Delayed delivery is built into core via contract-level `delay`
+        declarations.
     </Card>
     <Card icon="bars" title="Interceptors and Observability">
         Wrap handler and publish execution for tracing, metrics, and header injection.

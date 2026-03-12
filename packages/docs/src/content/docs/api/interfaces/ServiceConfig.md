@@ -5,7 +5,7 @@ prev: false
 title: "ServiceConfig"
 ---
 
-Defined in: packages/hoppity/src/ServiceBuilder.ts:27
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:28](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L28)
 
 Configuration for a service created via hoppity.service().
 
@@ -15,7 +15,7 @@ Configuration for a service created via hoppity.service().
 
 > **connection**: [`ConnectionConfig`](/hoppity/api/interfaces/connectionconfig/)
 
-Defined in: packages/hoppity/src/ServiceBuilder.ts:29
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:30](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L30)
 
 Connection settings for the RabbitMQ broker
 
@@ -25,7 +25,7 @@ Connection settings for the RabbitMQ broker
 
 > `optional` **defaultTimeout**: `number`
 
-Defined in: packages/hoppity/src/ServiceBuilder.ts:39
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:40](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L40)
 
 Default RPC timeout in ms (defaults to 30_000)
 
@@ -35,7 +35,7 @@ Default RPC timeout in ms (defaults to 30_000)
 
 > `optional` **delayedDelivery**: `DelayedDeliveryConfig`
 
-Defined in: packages/hoppity/src/ServiceBuilder.ts:54
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:55](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L55)
 
 Configuration for the delayed delivery engine.
 Only relevant when any declared contracts use `delay` support.
@@ -46,7 +46,7 @@ Only relevant when any declared contracts use `delay` support.
 
 > `optional` **handlers**: [`HandlerDeclaration`](/hoppity/api/type-aliases/handlerdeclaration/)[]
 
-Defined in: packages/hoppity/src/ServiceBuilder.ts:31
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:32](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L32)
 
 Handler declarations (onEvent, onCommand, onRpc)
 
@@ -56,7 +56,7 @@ Handler declarations (onEvent, onCommand, onRpc)
 
 > `optional` **instanceId**: `string`
 
-Defined in: packages/hoppity/src/ServiceBuilder.ts:37
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:38](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L38)
 
 Unique instance identifier — auto-generated (UUID) if not provided
 
@@ -66,7 +66,7 @@ Unique instance identifier — auto-generated (UUID) if not provided
 
 > `optional` **interceptors**: [`Interceptor`](/hoppity/api/interfaces/interceptor/)[]
 
-Defined in: packages/hoppity/src/ServiceBuilder.ts:49
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:50](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L50)
 
 Interceptors applied to all handler and publish operations.
 Each interceptor can declare inbound (handler wrapping), outbound (publish wrapping), or both.
@@ -74,11 +74,23 @@ Applied in declaration order — first interceptor is outermost wrapper.
 
 ---
 
+### logger?
+
+> `optional` **logger**: [`Logger`](/hoppity/api/interfaces/logger/)
+
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:61](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L61)
+
+Custom logger instance. When provided, replaces the default ConsoleLogger for all
+build pipeline logging, handler wiring, and outbound method logging. Providing the
+logger here ensures it is active before any middleware runs — no ordering footgun.
+
+---
+
 ### publishes?
 
 > `optional` **publishes**: ([`EventContract`](/hoppity/api/interfaces/eventcontract/)\<`string`, `string`, `ZodTypeAny`\> \| [`CommandContract`](/hoppity/api/interfaces/commandcontract/)\<`string`, `string`, `ZodTypeAny`\> \| [`RpcContract`](/hoppity/api/interfaces/rpccontract/)\<`string`, `string`, `ZodTypeAny`, `ZodTypeAny`\>)[]
 
-Defined in: packages/hoppity/src/ServiceBuilder.ts:33
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:34](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L34)
 
 Outbound contract declarations (events, commands, RPC calls to send)
 
@@ -88,7 +100,7 @@ Outbound contract declarations (events, commands, RPC calls to send)
 
 > `optional` **topology**: `BrokerConfig`
 
-Defined in: packages/hoppity/src/ServiceBuilder.ts:35
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:36](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L36)
 
 Optional raw Rascal BrokerConfig — merged as the base before derived topology layers on top
 
@@ -98,7 +110,7 @@ Optional raw Rascal BrokerConfig — merged as the base before derived topology 
 
 > `optional` **validateInbound**: `boolean`
 
-Defined in: packages/hoppity/src/ServiceBuilder.ts:41
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:42](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L42)
 
 Validate inbound payloads against contract schemas (defaults to true)
 
@@ -108,6 +120,6 @@ Validate inbound payloads against contract schemas (defaults to true)
 
 > `optional` **validateOutbound**: `boolean`
 
-Defined in: packages/hoppity/src/ServiceBuilder.ts:43
+Defined in: [packages/hoppity/src/ServiceBuilder.ts:44](https://github.com/apogee-travel/hoppity/blob/ad178a967c807167b2308ad04f8d6ce79450207d/packages/hoppity/src/ServiceBuilder.ts#L44)
 
 Validate outbound payloads against contract schemas (defaults to false)

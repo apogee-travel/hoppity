@@ -8,7 +8,7 @@ A multi-service demo showing how hoppity's contract-driven API works in a realis
 - `onRpc`, `onCommand`, `onEvent` -- typed handler declarations that drive automatic topology derivation
 - `hoppity.service(name, config).use(middleware).build()` -- the ServiceBuilder API
 - `ServiceBroker` with typed outbound methods: `broker.request()`, `broker.sendCommand()`, `broker.publishEvent()`
-- `withCustomLogger` -- injecting a tagged logger via `@apogeelabs/hoppity-logger`
+- `logger` in `ServiceConfig` -- injecting a tagged logger directly
 - RPC-only callers -- the runner has no inbound handlers, only outbound calls
 - Handler context -- publishing events from inside RPC and command handlers via `context.broker`
 
@@ -92,8 +92,8 @@ const broker = await hoppity
         connection: { url, vhost, options, retry },
         handlers: [createOrderHandler, getOrderSummaryHandler, cancelOrderHandler],
         publishes: [OrdersDomain.events.orderCreated, OrdersDomain.events.orderCancelled],
+        logger,
     })
-    .use(withCustomLogger({ logger }))
     .build();
 ```
 
@@ -106,8 +106,8 @@ const broker = await hoppity
     .service("catalog-service", {
         connection: { url, vhost, options, retry },
         handlers: [onOrderCreatedHandler, onOrderCancelledHandler, getStockLevelsHandler],
+        logger,
     })
-    .use(withCustomLogger({ logger }))
     .build();
 ```
 
@@ -125,8 +125,8 @@ const broker = await hoppity
             OrdersDomain.commands.cancelOrder,
             CatalogDomain.rpc.getStockLevels,
         ],
+        logger,
     })
-    .use(withCustomLogger({ logger }))
     .build();
 ```
 
@@ -183,8 +183,8 @@ The broker returned by `.build()` has typed methods: `broker.request(OrdersDomai
 **Handler context provides a broker for outbound operations.**
 Inside an `onRpc` or `onCommand` handler, the second argument is `{ broker }`. The handler can use `broker.publishEvent()` or `broker.sendCommand()` to trigger side effects -- e.g., the `createOrder` RPC handler publishes `orderCreated` after creating the order.
 
-**`withCustomLogger` goes first so all downstream middleware uses it.**
-Middleware receives the logger from `context.logger` at execution time -- so order matters.
+**Logger is passed in `ServiceConfig`, not as middleware.**
+It's available before the build pipeline starts — no ordering concerns.
 
 ## Configuration
 

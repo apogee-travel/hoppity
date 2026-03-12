@@ -95,11 +95,6 @@ export default defineConfig({
                 },
                 typeDocSidebarGroup,
                 {
-                    label: "hoppity-logger",
-                    collapsed: true,
-                    items: [{ slug: "packages/hoppity-logger" }],
-                },
-                {
                     label: "hoppity-open-telemetry",
                     collapsed: true,
                     items: [{ slug: "packages/hoppity-open-telemetry" }],
